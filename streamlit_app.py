@@ -10,8 +10,10 @@ import plotly.express as px
 import plotly.graph_objects as go
 import networkx as nx
 
-# Sample Data
+# Load Data
 data = pd.read_csv("Project Dataset.csv")
+
+# Sample Data
 sd = data.sample(n=3001, random_state=55027)
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
 catd = sd[['Country', 'Product', 'Import_Export', 'Category', 'Port', 'Customs_Code', 'Shipping_Method', 'Supplier', 'Customer', 'Payment_Terms']]
@@ -73,6 +75,7 @@ st.plotly_chart(fig)
 
 # Polynomial Regression
 st.subheader('Polynomial Regression Analysis')
+
 poly = PolynomialFeatures(degree=2)
 X_poly = poly.fit_transform(X)
 poly_reg = LinearRegression()
@@ -107,7 +110,7 @@ st.plotly_chart(fig)
 # Monthly Trends
 st.subheader('Monthly Trends')
 ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
-monthly_data = ncd.resample('ME', on='Date').mean()
+monthly_data = ncd.resample('M', on='Date').mean()
 
 # Plot for Quantity
 fig = go.Figure()
@@ -168,69 +171,6 @@ for var in variables:
     bar_fig.update_layout(title_text=f'Bar Chart of {var}', xaxis_title=var, yaxis_title='Frequency')
     st.plotly_chart(bar_fig)
 
-# Categorical Histogram
-st.subheader('Categorical Histograms')
-for column in catd[['Import_Export', 'Category', 'Shipping_Method', 'Payment_Terms']].columns:
-    plt.figure(figsize=(10, 6))  # Adjust figure size as needed
-    sns.countplot(x=column, data=catd)
-    plt.title(f'Histogram of {column}')
-    plt.xlabel(column)
-    plt.ylabel('Frequency')
-    plt.xticks(rotation=45, ha='right')  # Rotate x-axis labels for better readability
-    plt.tight_layout()
-    st.pyplot(plt.gcf())
-    plt.clf()  # Clear the current figure
-
-# Create a world map
-st.subheader('World Map of Countries')
-countries = sd['Country'].unique().tolist()
-fig = px.choropleth(
-    locations=countries,
-    locationmode='country names',
-    color=sd['Country'].value_counts().sort_index(),  # Color based on frequency
-    color_continuous_scale='Viridis',  # Choose a color scale
-    title='Interactive Map of Countries present in the dataset'
-)
-
-# Update layout for larger size
-fig.update_layout(
-    width=1000,  # Adjust width as desired
-    height=600   # Adjust height as desired
-)
-
-# Show the map
-st.plotly_chart(fig)
-
-# Import-Export Movements on World Map
-country_movements = pd.crosstab(catd['Country'], catd['Import_Export'])
-country_movements['Total'] = country_movements.sum(axis=1)  # Calculate total movements for each country
-
-fig = go.Figure(data=go.Choropleth(
-    locations=country_movements.index,
-    z=country_movements['Total'],
-    locationmode='country names',
-    colorscale='Reds',  # Choose a suitable color scale
-        colorbar_title="Total Movements",
-))
-
-fig.update_layout(
-    title_text='Import-Export Movements on World Map',
-    geo=dict(
-        showframe=False,
-        showcoastlines=False,
-        projection_type='equirectangular'
-    )
-)
-
-# Update layout for larger size
-fig.update_layout(
-    width=1000,  # Adjust width as desired
-    height=600   # Adjust height as desired
-)
-
-# Show the map
-st.plotly_chart(fig)
-
 # Import-Export Network Graph
 st.subheader('Import-Export Network Graph')
 graph = nx.DiGraph()
@@ -316,93 +256,6 @@ for var in categorical_vars:
                   color=var,
                   color_discrete_sequence=px.colors.qualitative.Dark24)
     st.plotly_chart(fig)
-
-# Import-Export Network Graph
-st.subheader('Import-Export Network Graph')
-graph = nx.DiGraph()
-countries = catd['Country'].unique()
-graph.add_nodes_from(countries)
-
-for _, row in catd.iterrows():
-    if row['Import_Export'] == 'Import':
-        graph.add_edge(row['Country'], 'Your Country')  # Replace 'Your Country' with the actual country
-    elif row['Import_Export'] == 'Export':
-        graph.add_edge('Your Country', row['Country'])  # Replace 'Your Country' with the actual country
-
-pos = nx.spring_layout(graph)
-edge_x = []
-edge_y = []
-for edge in graph.edges():
-    x0, y0 = pos[edge[0]]
-    x1, y1 = pos[edge[1]]
-    edge_x.extend([x0, x1, None])
-    edge_y.extend([y0, y1, None])
-
-edge_trace = go.Scatter(
-    x=edge_x, y=edge_y,
-    line=dict(width=0.5, color='#888'),
-    hoverinfo='none',
-    mode='lines')
-
-node_x = []
-node_y = []
-node_text = []
-for node in graph.nodes():
-    x, y = pos[node]
-    node_x.append(x)
-    node_y.append(y)
-    node_text.append(node)
-
-node_trace = go.Scatter(
-    x=node_x, y=node_y,
-    mode='markers',
-    hoverinfo='text',
-    text=node_text,
-    marker=dict(
-        showscale=True,
-        colorscale='YlGnBu',
-        reversescale=True,
-        color=[],
-        size=10,
-        colorbar=dict(
-            thickness=15,
-            title='Node Connections',
-            xanchor='left',
-            titleside='right'
-        ),
-        line_width=2))
-
-node_adjacencies = []
-node_text = []
-for node, adjacencies in enumerate(graph.adjacency()):
-    node_adjacencies.append(len(adjacencies[1]))
-    node_text.append(f'{adjacencies[0]} (# of connections: {len(adjacencies[1])})')
-
-node_trace.marker.color = node_adjacencies
-node_trace.text = node_text
-
-fig = go.Figure(data=[edge_trace, node_trace],
-                 layout=go.Layout(
-                     title='Import-Export Network Graph',
-                     titlefont_size=16,
-                     showlegend=False,
-                     hovermode='closest',
-                     margin=dict(b=20, l=5, r=5, t=40),
-                     xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                     yaxis=dict(showgrid=False, zeroline=False, showticklabels=False)))
-
-st.plotly_chart(fig)
-
-# Distribution of Categorical Variables
-st.subheader('Distribution of Categorical Variables')
-categorical_vars = ['Shipping_Method', 'Supplier', 'Customer', 'Payment_Terms']
-
-for var in categorical_vars:
-    fig = px.bar(catd, x=var, title=f'Distribution of {var}',
-                  color=var,
-                  color_discrete_sequence=px.colors.qualitative.Dark24)
-    st.plotly_chart(fig)
-
 
 # 3D Choropleth Maps
 st.subheader('3D Choropleth Maps for Top Imports and Exports')
@@ -432,9 +285,44 @@ fig_exports = px.choropleth(top_exports,
 st.plotly_chart(fig_imports)
 st.plotly_chart(fig_exports)
 
-# Conclusion
-st.subheader('Conclusion')
-st.write("This dashboard provides a comprehensive analysis of the import-export dataset, including statistical tests, visualizations, and interactive charts to understand the relationships and trends within the data.")
+# Animation for Category vs Value over Time
+st.subheader('Animated Bar Chart for Category vs Value Over Time')
+fig = px.bar(sd, x='Category', y='Value', color='Category', animation_frame='Date')
+st.plotly_chart(fig)
 
-# Footer
-st.write("Developed by Rushil Kohli")
+# Scatter Plot for Quantity vs Value
+st.subheader('Scatter Plot for Quantity vs Value')
+fig = px.scatter(sd, x='Quantity', y='Value', color='Country', hover_data=['Product'])
+st.plotly_chart(fig)
+
+# Sankey Diagram
+st.subheader('Trade Flow Sankey Diagram')
+fig = go.Figure(data=[go.Sankey(
+    node=dict(
+        pad=15,
+        thickness=20,
+        line=dict(color="green", width=0.5),
+        label=["Country A", "Country B", "Product X", "Product Y"],
+        color="blue"
+    ),
+    link=dict(
+        source=[0, 1, 0, 2, 3, 3],  # indices correspond to labels
+        target=[2, 3, 3, 4, 4, 5],
+        value=[8, 4, 2, 8, 4, 2]
+    ))])
+
+fig.update_layout(title_text="Trade Flow Sankey Diagram", font_size=10)
+st.plotly_chart(fig)
+
+# Sunburst Chart
+st.subheader('Trade Distribution by Category (Sunburst)')
+if 'Value' not in catd.columns:
+    sunburst_data = pd.merge(catd, sd[['Category', 'Value']], on=['Category'], how='left')
+else:
+    sunburst_data = catd  # 'catd' already has 'Value'
+
+fig = px.sunburst(sunburst_data, path=['Category'], values='Value',
+                  title='Trade Distribution by Category')
+
+fig.update_layout(width=800, height=600)
+st.plotly_chart(fig)
