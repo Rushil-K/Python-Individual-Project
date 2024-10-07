@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 import networkx as nx
 
 # Load Data
-data = pd.read_csv("C:\\Users\\rushi\\Desktop\\Python_FORE\\CSV Files\\Project Dataset.csv")
+data = pd.read_csv("Project Dataset.csv")
 
 # Sample Data
 sd = data.sample(n=3001, random_state=55027)
