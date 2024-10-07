@@ -210,4 +210,4 @@ if selected_visual == 'Interactive Box Plots':
     st.plotly_chart(figv)
     
     figw = px.box(ncd, y='Weight', title='Interactive Box Plot of Weight')
-    st.pyplot(figw)
+    st.plotly_chart(figw)
