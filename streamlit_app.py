@@ -544,4 +544,4 @@ if uploaded_file is not None:
 
     fig = px.sunburst(sunburst_data, path=['Category'], values='Value', title='Trade Distribution by Category')
     fig.update_layout(width=800, height=600)
-    st.plotly_chart(fig
+    st.plotly_chart(fig)
