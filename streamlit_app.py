@@ -14,6 +14,11 @@ import networkx as nx
 ncd = pd.read_csv('Project Dataset.csv')
 ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
 ncd = ncd.sort_values(by='Date')
+sd = data.sample(n=3001, random_state=55027)
+
+# Categorical Data for Analysis
+catd = sd[['Country','Product','Import_Export','Category','Port','Customs_Code','Shipping_Method','Supplier','Customer','Payment_Terms']]
+
 
 # Sidebar for selection
 st.sidebar.header('Visualization Settings')
