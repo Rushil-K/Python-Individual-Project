@@ -6,3 +6,7 @@ matplotlib
 seaborn
 scipy
 networkx
+scikit-learn
+pillow
+altair
+pydeck
