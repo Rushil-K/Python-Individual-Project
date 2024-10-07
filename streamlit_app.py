@@ -211,3 +211,160 @@ if selected_visual == 'Interactive Box Plots':
     
     figw = px.box(ncd, y='Weight', title='Interactive Box Plot of Weight')
     st.plotly_chart(figw)
+    
+    # Interactive Box Plot of Quantity
+    figq = px.box(ncd, y='Quantity', title='Interactive Box Plot of Quantity')
+    st.plotly_chart(figq)  # Display the box plot in Streamlit
+
+# Interactive Scatter Plot
+if selected_visual == 'Interactive Scatter Plots':
+    fig = px.scatter(ncd, x='Quantity', y='Value', color='Weight',
+                     hover_data=['Date'], title='Interactive Scatter Plot')
+    st.plotly_chart(fig)  # Display the scatter plot in Streamlit
+
+# Interactive Monthly Quantity Trend (Line Plot)
+if selected_visual == 'Interactive Monthly Line Plots':
+    figq = px.line(monthly_data, x=monthly_data.index, y='Quantity',
+                   title='Interactive Monthly Quantity Trend')
+    st.plotly_chart(figq)  # Display the line plot for Quantity in Streamlit
+    
+    # Interactive Monthly Value Trend (Line Plot)
+    figv = px.line(monthly_data, x=monthly_data.index, y='Value',
+                   title='Interactive Monthly Value Trend')
+    st.plotly_chart(figv)  # Display the line plot for Value in Streamlit
+    
+    # Interactive Monthly Weight Trend (Line Plot)
+    figw = px.line(monthly_data, x=monthly_data.index, y='Weight',
+                   title='Interactive Monthly Weight Trend')
+    st.plotly_chart(figw)  # Display the line plot for Weight in Streamlit
+
+# Create lists to store minimum and maximum frequencies
+min_freqs = []
+max_freqs = []
+
+for col in catd.columns:
+    value_counts = catd[col].value_counts()
+    min_freqs.append(value_counts.min())
+    max_freqs.append(value_counts.max())
+
+# Minimum and Maximum Frequencies Bar Charts
+fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+
+# Minimum Frequencies
+axes[0].bar(catd.columns, min_freqs)
+axes[0].set_xlabel('Variables')
+axes[0].set_ylabel('Minimum Frequency')
+axes[0].set_title('Minimum Frequencies')
+axes[0].tick_params(axis='x', rotation=45)
+
+# Maximum Frequencies
+axes[1].bar(catd.columns, max_freqs)
+axes[1].set_xlabel('Variables')
+axes[1].set_ylabel('Maximum Frequency')
+axes[1].set_title('Maximum Frequencies')
+axes[1].tick_params(axis='x', rotation=45)
+
+plt.tight_layout()
+st.pyplot(fig)
+
+# List of variables for pie and bar charts
+variables = ['Import_Export', 'Category', 'Shipping_Method', 'Payment_Terms']
+
+# Pie and Bar Charts for Variables
+for var in variables:
+    value_counts = catd[var].value_counts()
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    # Pie chart
+    axes[0].pie(value_counts, labels=value_counts.index, autopct='%1.1f%%', startangle=90)
+    axes[0].set_title(f'Pie Chart of {var}')
+
+    # Bar chart
+    axes[1].bar(value_counts.index, value_counts.values)
+    axes[1].set_xlabel(var)
+    axes[1].set_ylabel('Frequency')
+    axes[1].set_title(f'Bar Chart of {var}')
+    axes[1].tick_params(axis='x', rotation=45, ha='right')
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
+# Histograms for Categorical Variables
+for column in catd.columns:
+    fig = plt.figure(figsize=(10, 6))
+    sns.countplot(x=column, data=catd)
+    plt.title(f'Histogram of {column}')
+    plt.xlabel(column)
+    plt.ylabel('Frequency')
+    plt.xticks(rotation=45, ha='right')
+    plt.tight_layout()
+    st.pyplot(fig)
+
+# Plotly Choropleth Map
+countries = sd['Country'].unique().tolist()
+fig = px.choropleth(
+    locations=countries,
+    locationmode='country names',
+    color=sd['Country'].value_counts().sort_index(),
+    color_continuous_scale='Viridis',
+    title='Interactive Map of Countries in the Dataset'
+)
+fig.update_layout(width=1000, height=600)
+st.plotly_chart(fig)
+
+# Plotly Choropleth Map for Import-Export Movements
+country_movements = pd.crosstab(catd['Country'], catd['Import_Export'])
+country_movements['Total'] = country_movements.sum(axis=1)
+fig = go.Figure(data=go.Choropleth(
+    locations=country_movements.index,
+    z=country_movements['Total'],
+    locationmode='country names',
+    colorscale='Reds',
+    colorbar_title="Total Movements",
+))
+fig.update_layout(title_text='Import-Export Movements on World Map', width=1000, height=600)
+st.plotly_chart(fig)
+
+# Plotly Network Graph for Import-Export
+graph = nx.DiGraph()
+graph.add_nodes_from(catd['Country'].unique())
+
+for _, row in catd.iterrows():
+    if row['Import_Export'] == 'Import':
+        graph.add_edge(row['Country'], 'Your Country')
+    elif row['Import_Export'] == 'Export':
+        graph.add_edge('Your Country', row['Country'])
+
+pos = nx.spring_layout(graph)
+edge_x, edge_y = [], []
+for edge in graph.edges():
+    x0, y0 = pos[edge[0]]
+    x1, y1 = pos[edge[1]]
+    edge_x.extend([x0, x1, None])
+    edge_y.extend([y0, y1, None])
+
+edge_trace = go.Scatter(x=edge_x, y=edge_y, line=dict(width=0.5, color='#888'), hoverinfo='none', mode='lines')
+node_x, node_y, node_text = [], [], []
+for node in graph.nodes():
+    x, y = pos[node]
+    node_x.append(x)
+    node_y.append(y)
+    node_text.append(node)
+
+node_trace = go.Scatter(
+    x=node_x, y=node_y, mode='markers', hoverinfo='text', text=node_text,
+    marker=dict(showscale=True, colorscale='YlGnBu', size=10, line_width=2)
+)
+fig = go.Figure(data=[edge_trace, node_trace])
+fig.update_layout(title='Import-Export Network Graph', width=1000, height=600)
+st.plotly_chart(fig)
+
+# Plotly Sunburst Chart
+if 'Value' not in catd.columns:
+    sunburst_data = pd.merge(catd, sd[['Category', 'Value']], on=['Category'], how='left')
+else:
+    sunburst_data = catd
+fig = px.sunburst(sunburst_data, path=['Category'], values='Value', title='Trade Distribution by Category')
+fig.update_layout(width=800, height=600)
+st.plotly_chart(fig)
+
