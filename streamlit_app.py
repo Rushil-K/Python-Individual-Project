@@ -271,6 +271,7 @@ if uploaded_file is not None:
         st.pyplot(fig)
       
     # Correlation visualization heatmap
+    correlation_matrix = ncd[columns].corr()
     st.subheader("Correlation Heatmap")
 
     fig, ax = plt.subplots()
