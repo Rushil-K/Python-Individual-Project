@@ -11,13 +11,12 @@ import numpy as np
 import networkx as nx
 
 # Load data (replace 'data.csv' with your actual file or data source)
-ncd = pd.read_csv('Project Dataset.csv')
+data = pd.read_csv('Project Dataset.csv')
+# Assuming 'data' is your DataFrame
+sd = data.sample(n=3001, random_state=55027)
+ncd = sd[['Quantity', 'Value', 'Date' , 'Weight']]
 ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
-ncd = ncd.sort_values(by='Date')
-
-# Categorical Data for Analysis
-catd = sd[['Country','Product','Import_Export','Category','Port','Customs_Code','Shipping_Method','Supplier','Customer','Payment_Terms']]
-
+ncd = sd.sort_values(by='Date')
 
 # Sidebar for selection
 st.sidebar.header('Visualization Settings')
@@ -162,6 +161,19 @@ if selected_visual in ['Time Series (Monthly)', 'Time Series (Yearly)']:
     st.pyplot(plt)
 
 # Categorical Analysis
+import streamlit as st
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+import plotly.express as px
+import plotly.graph_objects as go
+import networkx as nx
+
+
+# Categorical Data for Analysis
+catd = sd[['Country','Product','Import_Export','Category','Port','Customs_Code','Shipping_Method','Supplier','Customer','Payment_Terms']]
+
+
 if selected_visual == 'Categorical Analysis':
     st.header('Categorical Analysis')
     variables = ['Import_Export', 'Category', 'Shipping_Method', 'Payment_Terms']
