@@ -160,15 +160,6 @@ if selected_visual in ['Time Series (Monthly)', 'Time Series (Yearly)']:
     plt.title(f'{selected_visual} Trend of {col}')
     st.pyplot(plt)
 
-# Categorical Analysis
-import streamlit as st
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
-import plotly.express as px
-import plotly.graph_objects as go
-import networkx as nx
-
 
 # Categorical Data for Analysis
 catd = sd[['Country','Product','Import_Export','Category','Port','Customs_Code','Shipping_Method','Supplier','Customer','Payment_Terms']]
@@ -187,10 +178,34 @@ if selected_visual == 'Categorical Analysis':
         ax[0].set_title(f'Pie Chart of {var}')
         
         # Bar chart
-        ax[1].bar(value_counts.index, value_counts.values)
-        ax[1].set_title(f'Bar Chart of {var}')
-        ax[1].tick_params(axis='x', rotation=45)
+        # Create lists to store minimum and maximum frequencies
+        min_freqs = []
+        max_freqs = []
         
+        for col in catd.columns:
+            value_counts = catd[col].value_counts()
+            min_freqs.append(value_counts.min())
+            max_freqs.append(value_counts.max())
+        
+        # Create separate bar charts
+        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+        
+        # Minimum Frequencies
+        axes[0].bar(catd.columns, min_freqs)
+        axes[0].set_xlabel('Variables')
+        axes[0].set_ylabel('Minimum Frequency')
+        axes[0].set_title('Minimum Frequencies')
+        axes[0].tick_params(axis='x', rotation=45)
+        
+        # Maximum Frequencies
+        axes[1].bar(catd.columns, max_freqs)
+        axes[1].set_xlabel('Variables')
+        axes[1].set_ylabel('Maximum Frequency')
+        axes[1].set_title('Maximum Frequencies')
+        axes[1].tick_params(axis='x', rotation=45)
+        plt.setp(axes[1].get_xticklabels(), ha='right')  # Set horizontal alignment of x-axis labels
+        
+        plt.tight_layout()
         st.pyplot(fig)
 
 # Import-Export Network Graph
