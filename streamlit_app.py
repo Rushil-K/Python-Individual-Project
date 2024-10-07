@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 
+uploaded_file = st.file_uploader("Project Dataset.csv", type=["csv"])
 if uploaded_file is not None:
     # Read the CSV file
     data = pd.read_csv('Project Dataset.csv')
