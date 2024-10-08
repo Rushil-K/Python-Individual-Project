@@ -30,19 +30,19 @@ st.title("Comprehensive Import/Export Data Dashboard")
 st.sidebar.header("Filters")
 
 # Country Selection
-countries = cat['Country'].unique()
+countries = catd['Country'].unique()
 selected_country = st.sidebar.selectbox("Select a Country", countries)
 
 # Filter data for the selected country
 filtered_data = ncd[sd['Country'] == selected_country]
-cat_data = cat[cat['Country'] == selected_country]
+catd_data = catd[catd['Country'] == selected_country]
 
 # Import/Export Selection
-import_export_options = cat_data['Import_Export'].unique()
+import_export_options = catd_data['Import_Export'].unique()
 selected_import_export = st.sidebar.multiselect("Select Import/Export Type", import_export_options, default=import_export_options)
 
 # Payment Terms Selection
-payment_terms_options = cat_data['Payment_Terms'].unique()
+payment_terms_options = catd_data['Payment_Terms'].unique()
 selected_payment_terms = st.sidebar.multiselect("Select Payment Terms", payment_terms_options, default=payment_terms_options)
 
 # Date Range Selection
@@ -58,8 +58,8 @@ filtered_data = filtered_data[
 
 # Further filter the data based on the Import/Export and Payment Terms selections
 filtered_data = filtered_data[
-    cat_data['Import_Export'].isin(selected_import_export) &
-    cat_data['Payment_Terms'].isin(selected_payment_terms)
+    catd_data['Import_Export'].isin(selected_import_export) &
+    catd_data['Payment_Terms'].isin(selected_payment_terms)
 ]
 
 # Visualizations
@@ -97,10 +97,10 @@ plt.xlabel('Date')
 plt.ylabel('Quantity')
 st.pyplot()
 
-# 5. Scatter Plot
-st.subheader("Scatter Plot: Quantity vs Value")
-plt.scatter(filtered_data['Value'], filtered_data['Quantity'], alpha=0.5)
-plt.title('Scatter Plot: Quantity vs Value')
+# 5. Scatdter Plot
+st.subheader("Scatdter Plot: Quantity vs Value")
+plt.scatdter(filtered_data['Value'], filtered_data['Quantity'], alpha=0.5)
+plt.title('Scatdter Plot: Quantity vs Value')
 plt.xlabel('Value')
 plt.ylabel('Quantity')
 st.pyplot()
@@ -131,7 +131,7 @@ st.pyplot(fig)
 
 # 10. 2D Heat Map
 st.subheader("2D Heat Map: Quantity and Payment Terms")
-heatmap_data = pd.crosstab(cat_data['Payment_Terms'], cat_data['Import_Export'], values=filtered_data['Quantity'], aggfunc='sum')
+heatmap_data = pd.crosstab(catd_data['Payment_Terms'], catd_data['Import_Export'], values=filtered_data['Quantity'], aggfunc='sum')
 sns.heatmap(heatmap_data, annot=True, fmt='g', cmap='Blues')
 plt.title('2D Heat Map of Quantity by Payment Terms and Import/Export Type')
 st.pyplot()
@@ -172,7 +172,7 @@ st.line_chart(sparkline_data.set_index('Date'))
 
 # 16. Word Clouds
 st.subheader("Word Cloud of Countries")
-wordcloud_data = ' '.join(cat['Country'].astype(str))
+wordcloud_data = ' '.join(catd['Country'].astype(str))
 wordcloud = WordCloud(width=800, height=400, background_color='white').generate(wordcloud_data)
 plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')
