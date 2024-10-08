@@ -1,263 +1,117 @@
 import pandas as pd
-import numpy as np
 import streamlit as st
-import matplotlib.pyplot as plt
-import seaborn as sns
-from wordcloud import WordCloud
 import plotly.express as px
-from scipy.cluster.hierarchy import dendrogram, linkage
+import plotly.graph_objs as go
+from wordcloud import WordCloud
+import numpy as np
+import geopandas as gpd
 
-# Load Data
+# Load and preprocess the data
 df = pd.read_csv("Project Dataset.csv")
-
-# Sample Data
 sample_data = df.sample(n=3001, random_state=55027)
+sample_data['Date'] = pd.to_datetime(sample_data['Date'], format="%d-%m-%Y")
+
+# Separate non-categorical and categorical data
 non_categorical_data = sample_data[['Quantity', 'Value', 'Date', 'Weight']]
 categorical_data = sample_data[['Country', 'Import_Export', 'Shipping_Method', 'Payment_Terms']]
 
-# Convert 'Date' column to datetime format
-non_categorical_data['Date'] = pd.to_datetime(non_categorical_data['Date'], format="%d-%m-%Y")
-
-# Streamlit Dashboard
-st.title("Comprehensive Import/Export Data Dashboard")
+# Streamlit layout
+st.title("Comprehensive Dashboard")
 
 # Sidebar for filters
-st.sidebar.header("Filters")
+selected_countries = st.sidebar.multiselect(
+    "Select Countries",
+    options=categorical_data['Country'].unique(),
+    default=categorical_data['Country'].unique()  # Default to all countries
+)
 
-# Country Selection
-countries = categorical_data['Country'].unique()
-selected_country = st.sidebar.selectbox("Select a Country", countries)
+# Filter data based on selected countries
+filtered_data = sample_data[sample_data['Country'].isin(selected_countries)]
 
-# Import/Export Selection
-import_export_options = categorical_data['Import_Export'].unique()
-selected_import_export = st.sidebar.multiselect("Select Import/Export Type", import_export_options, default=import_export_options)
+# Bar Chart
+bar_fig = px.bar(filtered_data, x='Country', y='Value', title="Bar Chart: Value by Country")
+st.plotly_chart(bar_fig)
 
-# Shipping Method Selection
-shipping_method_options = categorical_data['Shipping_Method'].unique()
-selected_shipping_method = st.sidebar.multiselect("Select Shipping Method", shipping_method_options, default=shipping_method_options)
+# Line Chart
+line_fig = px.line(filtered_data, x='Date', y='Value', title="Line Chart: Value over Time")
+st.plotly_chart(line_fig)
 
-# Payment Terms Selection
-payment_terms_options = categorical_data['Payment_Terms'].unique()
-selected_payment_terms = st.sidebar.multiselect("Select Payment Terms", payment_terms_options, default=payment_terms_options)
+# Pie Chart
+pie_fig = px.pie(filtered_data, names='Country', values='Value', title="Pie Chart: Value Distribution by Country")
+st.plotly_chart(pie_fig)
 
-# Date Range Selection
-date_min = non_categorical_data['Date'].min().date()
-date_max = non_categorical_data['Date'].max().date()
-selected_date_range = st.sidebar.date_input("Select Date Range", [date_min, date_max])
+# Area Chart
+area_fig = px.area(filtered_data, x='Date', y='Value', title="Area Chart: Value over Time")
+st.plotly_chart(area_fig)
 
-# Filter data based on selections
-filtered_data = non_categorical_data[
-    (non_categorical_data['Date'].dt.date >= selected_date_range[0]) &
-    (non_categorical_data['Date'].dt.date <= selected_date_range[1]) &
-    (categorical_data['Country'] == selected_country) &
-    (categorical_data['Import_Export'].isin(selected_import_export)) &
-    (categorical_data['Shipping_Method'].isin(selected_shipping_method)) &
-    (categorical_data['Payment_Terms'].isin(selected_payment_terms))
-]
+# Scatter Plot
+scatter_fig = px.scatter(filtered_data, x='Weight', y='Value', color='Country', title="Scatter Plot: Weight vs Value")
+st.plotly_chart(scatter_fig)
 
-# Visualizations
+# Histogram
+histogram_fig = px.histogram(filtered_data, x='Value', title="Histogram: Value Distribution")
+st.plotly_chart(histogram_fig)
 
-# 1. Bar Chart
-st.subheader("Bar Chart: Quantity by Import/Export")
-bar_data = filtered_data.groupby('Import_Export')['Quantity'].sum().reset_index()
-sns.barplot(x='Import_Export', y='Quantity', data=bar_data)
-plt.title('Total Quantity by Import/Export Type')
-st.pyplot()
+# Heat Map
+heatmap_data = filtered_data.pivot_table(index='Country', columns='Import_Export', values='Value', aggfunc='sum').fillna(0)
+heatmap_fig = go.Figure(data=go.Heatmap(z=heatmap_data.values, x=heatmap_data.columns, y=heatmap_data.index, colorscale='Viridis'))
+heatmap_fig.update_layout(title='Heatmap: Value by Country and Import/Export', xaxis_title='Import/Export', yaxis_title='Country')
+st.plotly_chart(heatmap_fig)
 
-# 2. Line Chart
-st.subheader("Line Chart: Quantity Over Time")
-line_data = filtered_data.groupby('Date')['Quantity'].sum().reset_index()
-plt.plot(line_data['Date'], line_data['Quantity'])
-plt.title('Quantity Over Time')
-plt.xlabel('Date')
-plt.ylabel('Quantity')
-st.pyplot()
+# Choropleth Map
+geo_df = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
+merged = geo_df.set_index('name').join(filtered_data.groupby('Country').sum())
+choropleth_fig = px.choropleth(merged, geojson=geo_df.geometry, locations=merged.index, color='Value',
+                                title="Choropleth Map: Value by Country", color_continuous_scale="Viridis")
+choropleth_fig.update_geos(fitbounds="locations")
+st.plotly_chart(choropleth_fig)
 
-# 3. Pie Chart
-st.subheader("Pie Chart: Quantity Distribution by Import/Export")
-pie_data = filtered_data.groupby('Import_Export')['Quantity'].sum()
-fig1, ax1 = plt.subplots()
-ax1.pie(pie_data, labels=pie_data.index, autopct='%1.1f%%', startangle=90)
-ax1.axis('equal')  # Equal aspect ratio ensures pie chart is circular.
-st.pyplot(fig1)
+# Bubble Map
+bubble_fig = px.scatter_geo(filtered_data, locations='Country', size='Value', title='Bubble Map: Value by Country', hover_name='Country')
+st.plotly_chart(bubble_fig)
 
-# 4. Area Chart
-st.subheader("Area Chart: Quantity Over Time")
-plt.fill_between(line_data['Date'], line_data['Quantity'], color="skyblue", alpha=0.4)
-plt.plot(line_data['Date'], line_data['Quantity'], color="Slateblue", alpha=0.6)
-plt.title('Area Chart of Quantity Over Time')
-plt.xlabel('Date')
-plt.ylabel('Quantity')
-st.pyplot()
+# Box Plot
+box_fig = px.box(filtered_data, x='Country', y='Value', title="Box Plot: Value by Country")
+st.plotly_chart(box_fig)
 
-# 5. Scatter Plot
-st.subheader("Scatter Plot: Quantity vs Value")
-plt.scatter(filtered_data['Value'], filtered_data['Quantity'], alpha=0.5)
-plt.title('Scatter Plot: Quantity vs Value')
-plt.xlabel('Value')
-plt.ylabel('Quantity')
-st.pyplot()
-
-# 6. Data Table
-st.subheader("Data Table")
-st.write(filtered_data)
-
-# 7. Summary Table
-summary_data = filtered_data.describe()
-st.subheader("Summary Table")
-st.write(summary_data)
-
-# 8. Single Value Gauge
-st.subheader("Single Value Gauge: Total Quantity")
-total_quantity = filtered_data['Quantity'].sum()
-st.metric(label="Total Quantity", value=total_quantity)
-
-# 9. Radial Gauge
-st.subheader("Radial Gauge: Total Value")
-total_value = filtered_data['Value'].sum()
-fig, ax = plt.subplots(figsize=(8, 8), subplot_kw=dict(polar=True))
-theta = np.linspace(0, 2 * np.pi, 100)
-r = np.linspace(0, total_value, 100)
-ax.fill(theta, r, color='blue', alpha=0.25)
-ax.set_title('Total Value Gauge')
-st.pyplot(fig)
-
-# 10. 2D Heat Map
-st.subheader("2D Heat Map: Quantity and Payment Terms")
-heatmap_data = pd.crosstab(categorical_data['Payment_Terms'], categorical_data['Import_Export'], values=filtered_data['Quantity'], aggfunc='sum')
-sns.heatmap(heatmap_data, annot=True, fmt='g', cmap='Blues')
-plt.title('2D Heat Map of Quantity by Payment Terms and Import/Export Type')
-st.pyplot()
-
-# 11. Histograms
-st.subheader("Histogram: Distribution of Quantity")
-plt.hist(filtered_data['Quantity'], bins=20, color='skyblue', edgecolor='black')
-plt.title('Histogram of Quantity Distribution')
-plt.xlabel('Quantity')
-plt.ylabel('Frequency')
-st.pyplot()
-
-# 12. Bullet Graph
-st.subheader("Bullet Graph: Value Target vs Actual")
-target_value = filtered_data['Value'].mean() + 1000  # Example target
-plt.barh(['Actual Value'], [total_value], color='blue')
-plt.barh(['Target Value'], [target_value], color='red', alpha=0.5)
-plt.title('Bullet Graph')
-plt.xlim(0, max(total_value, target_value) * 1.2)
-st.pyplot()
-
-# 13. Funnel Chart
-st.subheader("Funnel Chart")
-funnel_data = filtered_data.groupby('Import_Export')['Quantity'].sum().reset_index()
-fig_funnel = px.funnel(funnel_data, x='Quantity', y='Import_Export', title='Funnel Chart: Quantity by Import/Export')
-st.plotly_chart(fig_funnel)
-
-# 14. Treemaps
-st.subheader("Treemap: Quantity Distribution")
-treemap_data = filtered_data.groupby('Import_Export')['Quantity'].sum().reset_index()
-fig_treemap = px.treemap(treemap_data, path=['Import_Export'], values='Quantity', title='Treemap of Quantity by Import/Export')
-st.plotly_chart(fig_treemap)
-
-# 15. Sparklines
-st.subheader("Sparklines")
-sparkline_data = filtered_data.groupby('Date')['Quantity'].sum().reset_index()
-st.line_chart(sparkline_data.set_index('Date'))
-
-# 16. Word Clouds
-st.subheader("Word Cloud of Countries")
-wordcloud_data = ' '.join(categorical_data['Country'].astype(str))
+# Word Cloud
+wordcloud_data = ' '.join(filtered_data['Country'].tolist())
 wordcloud = WordCloud(width=800, height=400, background_color='white').generate(wordcloud_data)
-plt.imshow(wordcloud, interpolation='bilinear')
-plt.axis('off')
-st.pyplot()
+st.image(wordcloud.to_array(), caption='Word Cloud of Countries', use_column_width=True)
 
-# 17. Network Graphs
-st.subheader("Network Graphs")
-# Here, you can implement a network graph based on your specific logic. This is a placeholder.
+# KPI Cards
+total_value = filtered_data['Value'].sum()
+total_quantity = filtered_data['Quantity'].sum()
+kpi_col1, kpi_col2 = st.columns(2)
+kpi_col1.metric(label="Total Value", value=f"{total_value:.2f}")
+kpi_col2.metric(label="Total Quantity", value=f"{total_quantity:.2f}")
 
-# 18. KPI Cards
-st.subheader("KPI Cards")
-st.metric(label="Average Value", value=filtered_data['Value'].mean())
+# Funnel Chart (Example Data)
+funnel_fig = go.Figure()
+funnel_fig.add_trace(go.Funnel(
+    name="Funnel",
+    y=["Stage 1", "Stage 2", "Stage 3", "Stage 4"],
+    x=[100, 80, 50, 20]
+))
+funnel_fig.update_layout(title="Funnel Chart")
+st.plotly_chart(funnel_fig)
 
-# 19. Gantt Charts
-st.subheader("Gantt Chart")
-# Implement your Gantt chart logic here.
+# Waterfall Chart (Example Data)
+waterfall_fig = go.Figure(go.Waterfall(
+    x=["Start", "Step 1", "Step 2", "End"],
+    y=[500, -200, 300, 600],
+    measure=["total", "increase", "decrease", "total"]
+))
+waterfall_fig.update_layout(title="Waterfall Chart")
+st.plotly_chart(waterfall_fig)
 
-# 20. Box Plots
-st.subheader("Box Plot: Quantity by Import/Export")
-sns.boxplot(x='Import_Export', y='Quantity', data=filtered_data)
-plt.title('Box Plot of Quantity by Import/Export Type')
-st.pyplot()
+# Radial Chart (Example Data)
+radial_fig = px.pie(filtered_data, values='Value', names='Country', title="Radial Chart")
+st.plotly_chart(radial_fig)
 
-# 21. Waterfall Charts
-st.subheader("Waterfall Chart")
-# Implement your waterfall chart logic here.
+# Donut Chart
+donut_fig = px.pie(filtered_data, values='Value', names='Country', hole=0.4, title="Donut Chart")
+st.plotly_chart(donut_fig)
 
-# 22. Violin Plots
-st.subheader("Violin Plot: Quantity by Import/Export")
-sns.violinplot(x='Import_Export', y='Quantity', data=filtered_data)
-plt.title('Violin Plot of Quantity by Import/Export Type')
-st.pyplot()
+# To run the app, use the command: streamlit run <filename>.py
 
-# 23. Donut Charts
-st.subheader("Donut Chart: Quantity Distribution by Import/Export")
-fig2, ax2 = plt.subplots()
-size = 0.3
-vals = pie_data
-circular_sizes = [0.9, 0.6]  # Inner and outer radius
-wedges, texts, autotexts = ax2.pie(vals, labels=vals.index, autopct='%1.1f%%', startangle=90, pctdistance=0.85, radius=circular_sizes[0])
-centre_circle = plt.Circle((0, 0), circular_sizes[1], color='white', fc='white')
-fig2.gca().add_artist(centre_circle)
-ax2.axis('equal')  # Equal aspect ratio ensures donut chart is circular.
-st.pyplot(fig2)
-
-# 24. Stacked Bar/Column Charts
-st.subheader("Stacked Bar Chart: Quantity by Shipping Method")
-stacked_data = filtered_data.groupby(['Shipping_Method', 'Import_Export'])['Quantity'].sum().unstack()
-stacked_data.plot(kind='bar', stacked=True)
-plt.title('Stacked Bar Chart: Quantity by Shipping Method')
-plt.xlabel('Shipping Method')
-plt.ylabel('Quantity')
-st.pyplot()
-
-# 25. Radial Charts
-st.subheader("Radial Chart: Quantity Distribution")
-radial_data = filtered_data.groupby('Import_Export')['Quantity'].sum().reset_index()
-plt.subplot(projection='polar')
-theta = np.linspace(0, 2 * np.pi, len(radial_data))
-plt.polar(theta, radial_data['Quantity'], marker='o')
-plt.title('Radial Chart of Quantity Distribution')
-st.pyplot()
-
-# 26. Timeline Visualizations
-st.subheader("Timeline Visualizations")
-# Implement your timeline visualization logic here.
-
-# 27. Matrix Charts
-st.subheader("Matrix Chart: Quantity vs Shipping Method")
-matrix_data = pd.crosstab(categorical_data['Shipping_Method'], categorical_data['Import_Export'], values=filtered_data['Quantity'], aggfunc='sum')
-sns.heatmap(matrix_data, annot=True, fmt='g', cmap='Blues')
-plt.title('Matrix Chart of Quantity by Shipping Method and Import/Export Type')
-st.pyplot()
-
-# 28. Multi-Series Charts
-st.subheader("Multi-Series Chart: Quantity Over Time by Import/Export")
-multi_series_data = filtered_data.groupby(['Date', 'Import_Export'])['Quantity'].sum().reset_index()
-sns.lineplot(data=multi_series_data, x='Date', y='Quantity', hue='Import_Export')
-plt.title('Multi-Series Chart: Quantity Over Time by Import/Export')
-st.pyplot()
-
-# 29. Comparison Charts
-st.subheader("Comparison Chart: Quantity Comparison")
-comparison_data = filtered_data.groupby(['Country', 'Import_Export'])['Quantity'].sum().reset_index()
-sns.barplot(data=comparison_data, x='Country', y='Quantity', hue='Import_Export')
-plt.title('Comparison Chart: Quantity by Country and Import/Export')
-st.pyplot()
-
-# 30. Dendrograms
-st.subheader("Dendrogram")
-linked = linkage(filtered_data[['Quantity', 'Value', 'Weight']], 'single')
-plt.figure(figsize=(10, 7))
-dendrogram(linked)
-plt.title('Dendrogram of Quantity, Value, and Weight')
-st.pyplot()
