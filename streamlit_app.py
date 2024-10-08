@@ -1,171 +1,166 @@
+import streamlit as st
 import pandas as pd
 import numpy as np
-import seaborn as sns
 import matplotlib.pyplot as plt
-import scipy.stats as stats
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-import streamlit as st
+import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from scipy import stats
+import statsmodels.api as sm
 import networkx as nx
 
-# Load Data
-data = pd.read_csv("Project Dataset.csv")
+# 1. Load and Cache Data
+@st.cache_data
+def load_data():
+    data = pd.read_csv("Project Dataset.csv")
+    return data
 
-# Sample Data
+data = load_data()
+
+# 2. Sample and filter the data
 sd = data.sample(n=3001, random_state=55027)
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
-catd = sd[['Country', 'Product', 'Import_Export', 'Category', 'Port', 'Customs_Code', 'Shipping_Method', 'Supplier', 'Customer', 'Payment_Terms']]
+catd = sd[['Country','Product','Import_Export','Category','Port','Customs_Code','Shipping_Method','Supplier','Customer','Payment_Terms']]
 
-# Streamlit Title
-st.title('Data Analysis Dashboard')
+# 3. Sidebar Filters
+st.sidebar.header("Data Filters")
 
-# Slicers
-st.sidebar.header("Filters")
-country_filter = st.sidebar.multiselect("Select Countries", options=catd['Country'].unique())
-product_filter = st.sidebar.multiselect("Select Products", options=catd['Product'].unique())
-category_filter = st.sidebar.multiselect("Select Categories", options=catd['Category'].unique())
+# Date filter
+min_date, max_date = st.sidebar.date_input('Select Date Range:', [sd['Date'].min(), sd['Date'].max()])
+sd = sd[(sd['Date'] >= pd.to_datetime(min_date)) & (sd['Date'] <= pd.to_datetime(max_date))]
 
-# Cached filtered data
-cached_filtered_data = {}
+# Filter for categorical fields
+selected_country = st.sidebar.multiselect('Select Country:', options=sd['Country'].unique(), default=sd['Country'].unique())
+selected_product = st.sidebar.multiselect('Select Product:', options=sd['Product'].unique(), default=sd['Product'].unique())
+selected_import_export = st.sidebar.multiselect('Select Import/Export:', options=sd['Import_Export'].unique(), default=sd['Import_Export'].unique())
 
-def get_filtered_data(country_filter, product_filter, category_filter):
-  key = (tuple(country_filter), tuple(product_filter), tuple(category_filter))
-  if key not in cached_filtered_data:
-    filtered_data = catd.copy()
-    if country_filter:
-      filtered_data = filtered_data[filtered_data['Country'].isin(country_filter)]
-    if product_filter:
-      filtered_data = filtered_data[filtered_data['Product'].isin(product_filter)]
-    if category_filter:
-      filtered_data = filtered_data[filtered_data['Category'].isin(category_filter)]
-    cached_filtered_data[key] = filtered_data
-  return cached_filtered_data[key]
+# Apply filters to the data
+sd_filtered = sd[(sd['Country'].isin(selected_country)) & 
+                 (sd['Product'].isin(selected_product)) & 
+                 (sd['Import_Export'].isin(selected_import_export))]
 
-# Display Sample Data
-st.subheader('Sample Data')
-filtered_data = get_filtered_data(country_filter, product_filter, category_filter)
-st.dataframe(filtered_data)
+# 4. Visualization of numeric data
+st.header("Visualizations of Numeric Data")
 
-# Normality Tests
-st.subheader('Normality Tests')
+# Shapiro-Wilk Test for Normality with Visuals
+st.subheader("Normality Test Results & Visualizations")
+
 for col in ['Quantity', 'Value', 'Weight']:
-  stat, p = stats.shapiro(ncd[col])
-  st.write(f"**Shapiro-Wilk Test for {col} -** Statistic: {stat}, p-value: {p}")
+    stat, p = stats.shapiro(ncd[col])
+    st.write(f"Shapiro-Wilk Test for {col}: Statistic={stat:.4f}, p-value={p:.4f}")
+    
+    # Histogram & Q-Q plot
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+    sns.histplot(ncd[col], kde=True, ax=ax[0])
+    ax[0].set_title(f'Histogram of {col}')
+    stats.probplot(ncd[col], dist="norm", plot=ax[1])
+    ax[1].set_title(f'Q-Q Plot of {col}')
+    st.pyplot(fig)
 
-  # Visualize with histogram and Q-Q plot
-  fig, ax = plt.subplots(1, 2, figsize=(12, 4))
+# Box Plot Section
+st.subheader("Box Plots")
+st.plotly_chart(px.box(ncd, y='Value', title='Box Plot of Value'))
+st.plotly_chart(px.box(ncd, y='Weight', title='Box Plot of Weight'))
+st.plotly_chart(px.box(ncd, y='Quantity', title='Box Plot of Quantity'))
 
-  sns.histplot(ncd[col], kde=True, ax=ax[0])
-  ax[0].set_title(f'Histogram of {col}')
+# Pairplot
+st.subheader("Pair Plot")
+st.write("Scatter plots between Quantity, Value, and Weight.")
+sns.pairplot(ncd)
+st.pyplot()
 
-  stats.probplot(ncd[col], dist="norm", plot=ax[1])
-  ax[1].set_title(f'Q-Q Plot of {col}')
+# Correlation Heatmap
+st.subheader("Correlation Heatmap")
+corr_matrix = ncd.corr()
+st.plotly_chart(px.imshow(corr_matrix.values,
+                 x=corr_matrix.columns,
+                 y=corr_matrix.index,
+                 title='Interactive Correlation Heatmap'))
 
-  st.pyplot(fig)
+# 5. Linear & Polynomial Regression
+st.header("Regression Analysis")
 
-# Linear Regression
-st.subheader('Linear Regression Analysis')
+# Linear Regression (Example: Quantity vs Value)
+st.subheader("Linear Regression: Quantity vs Value")
 X = ncd[['Quantity', 'Weight']]
 y = ncd['Value']
-
 lin_reg = LinearRegression()
 lin_reg.fit(X, y)
 y_pred_lin = lin_reg.predict(X)
 
-# Plotting Linear Regression
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=X['Quantity'], y=y, mode='markers', name='Actual Data', marker=dict(color='blue')))
-fig.add_trace(go.Scatter(x=X['Quantity'], y=y_pred_lin, mode='lines', name='Linear Regression', line=dict(color='red')))
-fig.update_layout(title='Linear Regression: Value as Dependent Variable', xaxis_title='Quantity', yaxis_title='Value')
-st.plotly_chart(fig)
+fig, ax = plt.subplots()
+ax.scatter(X['Quantity'], y, color='blue')
+ax.plot(X['Quantity'], y_pred_lin, color='red', label='Linear Regression')
+ax.set_xlabel('Quantity')
+ax.set_ylabel('Value')
+ax.set_title('Linear Regression')
+st.pyplot(fig)
 
-# Polynomial Regression
-st.subheader('Polynomial Regression Analysis')
-
-poly = PolynomialFeatures(degree=2)
+# Polynomial Regression (Degree=2)
+st.subheader("Polynomial Regression")
+degree = st.slider("Select Degree for Polynomial Regression:", min_value=1, max_value=5, value=2)
+poly = PolynomialFeatures(degree=degree)
 X_poly = poly.fit_transform(X)
 poly_reg = LinearRegression()
 poly_reg.fit(X_poly, y)
 y_pred_poly = poly_reg.predict(X_poly)
 
-# Plotting Polynomial Regression
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=X['Quantity'], y=y, mode='markers', name='Actual Data', marker=dict(color='blue')))
-fig.add_trace(go.Scatter(x=X['Quantity'], y=y_pred_poly, mode='lines', name='Polynomial Regression', line=dict(color='green')))
-fig.update_layout(title='Polynomial Regression: Value as Dependent Variable', xaxis_title='Quantity', yaxis_title='Value')
+fig, ax = plt.subplots()
+ax.scatter(X['Quantity'], y, color='blue')
+ax.plot(X['Quantity'], y_pred_poly, color='green', label=f'Polynomial Regression (degree={degree})')
+ax.set_xlabel('Quantity')
+ax.set_ylabel('Value')
+ax.set_title('Polynomial Regression')
+st.pyplot(fig)
+
+# 6. Categorical Data Visualizations
+st.header("Categorical Data Visualizations")
+
+# Pie and Bar Charts
+for var in ['Import_Export', 'Category', 'Shipping_Method', 'Payment_Terms']:
+    st.subheader(f"{var} Distribution")
+    value_counts = catd[var].value_counts()
+    
+    fig = plt.figure(figsize=(10, 5))
+    
+    # Pie chart
+    plt.subplot(1, 2, 1)
+    plt.pie(value_counts, labels=value_counts.index, autopct='%1.1f%%', startangle=90)
+    plt.title(f'Pie Chart of {var}')
+    
+    # Bar chart
+    plt.subplot(1, 2, 2)
+    plt.bar(value_counts.index, value_counts.values)
+    plt.title(f'Bar Chart of {var}')
+    st.pyplot(fig)
+
+# Country-specific visualizations
+st.subheader("Interactive World Map of Import-Export Movements")
+countries = sd['Country'].unique().tolist()
+fig = px.choropleth(locations=countries, locationmode='country names',
+                    color=sd['Country'].value_counts().sort_index(),
+                    title='Interactive Map of Countries')
 st.plotly_chart(fig)
 
-# Box Plots
-st.subheader('Box-Whisker Plots')
-fig = go.Figure()
-for col in ['Quantity', 'Value', 'Weight']:
-  fig.add_trace(go.Box(y=ncd[col], name=col, boxmean='sd'))
-
-fig.update_layout(title='Box-Whisker Plot for Quantity, Value, and Weight')
-st.plotly_chart(fig)
-
-# Scatter Plots
-st.subheader('Scatter Plots')
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=ncd['Quantity'], y=ncd['Value'], mode='markers', name='Quantity vs Value', marker=dict(color='blue')))
-fig.add_trace(go.Scatter(x=ncd['Quantity'], y=ncd['Weight'], mode='markers', name='Quantity vs Weight', marker=dict(color='red')))
-fig.add_trace(go.Scatter(x=ncd['Value'], y=ncd['Weight'], mode='markers', name='Value vs Weight', marker=dict(color='green')))
-fig.update_layout(title='Scatter Plots', xaxis_title='X-axis', yaxis_title='Y-axis')
-st.plotly_chart(fig)
-
-# Monthly Trends
-st.subheader('Monthly Trends')
-ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
-monthly_data = ncd.resample('M', on='Date').mean()
-
-# Plot for Quantity
-fig = go.Figure()
-fig.add_trace(go.Scatter(x=monthly_data.index, y=monthly_data['Quantity'], mode='lines+markers', name='Average Quantity'))
-fig.update_layout(title='Monthly Trend of Quantity', xaxis_title='Month', yaxis_title='Average Quantity')
-st.plotly_chart(fig)
-
-# Correlation Matrix
-st.subheader('Correlation Matrix')
-correlation_matrix = ncd[['Quantity', 'Value', 'Weight']].corr()
-st.write(correlation_matrix)
-
-# Correlation Visualization
-fig = px.imshow(correlation_matrix, text_auto=True, title='Correlation Heatmap')
-st.plotly_chart(fig)
-
-# Categorical Data Analysis
-st.subheader('Categorical Data Analysis')
-# Minimum and Maximum Frequencies
-min_freqs = []
-max_freqs = []
-variables = ['Import_Export', 'Category', 'Shipping_Method', 'Payment_Terms']
-
-for var in variables:
-    value_counts = filtered_data[var].value_counts()
-    if not value_counts.empty:
-        min_freqs.append(value_counts.min())
-        max_freqs.append(value_counts.max())
-
-        # Pie Chart
-        pie_fig = go.Figure(data=[go.Pie(labels=value_counts.index, values=value_counts.values, hole=.3)])
-        pie_fig.update_layout(title_text=f'Pie Chart of {var}')
-        st.plotly_chart(pie_fig)
-
-        # Bar Chart
-        bar_fig = go.Figure(data=[go.Bar(x=value_counts.index, y=value_counts.values)])
-        bar_fig.update_layout(title_text=f'Bar Chart of {var}', xaxis_title=var, yaxis_title='Frequency')
-        st.plotly_chart(bar_fig)
-    else:
-        st.warning(f"No data available for {var}")
-
-# Import-Export Network Graph
-st.subheader('Import-Export Network Graph')
+# Network Graph
+st.subheader("Import-Export Network Graph")
 graph = nx.DiGraph()
-countries = ncd['Country'].unique()
+countries = catd['Country'].unique()
 graph.add_nodes_from(countries)
 
-for _, row in ncd.iterrows():
+# Add edges (import-export relationships)
+for _, row in catd.iterrows():
     if row['Import_Export'] == 'Import':
-        graph.
+        graph.add_edge(row['Country'], 'Your Country')  # Replace with relevant country
+    elif row['Import_Export'] == 'Export':
+        graph.add_edge('Your Country', row['Country'])  # Replace with relevant country
+
+# Network Graph Visual
+pos = nx.spring_layout(graph)
+fig_network = go.Figure(data=[go.Scatter(x=[pos[node][0] for node in graph.nodes()],
+                                         y=[pos[node][1] for node in graph.nodes()],
+                                         mode='markers+text', text=[node for node in graph.nodes()])])
+st.plotly_chart(fig_network)
+
