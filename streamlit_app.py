@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
 import plotly.express as px
 import plotly.graph_objects as go
 from wordcloud import WordCloud
@@ -50,7 +49,7 @@ def main():
     # 2. Line Chart
     with col1:
         st.subheader("Line Chart")
-        line_data = df.groupby('Date').sum().reset_index()
+        line_data = df.groupby('Date').sum(numeric_only=True).reset_index()  # Only sum numeric columns
         fig_line = px.line(line_data, x='Date', y='Value', title='Total Value Over Time')
         st.plotly_chart(fig_line, key="line_chart_1")
 
@@ -64,7 +63,7 @@ def main():
     # 4. Area Chart
     with col1:
         st.subheader("Area Chart")
-        area_data = df.groupby('Date').sum().reset_index()
+        area_data = df.groupby('Date').sum(numeric_only=True).reset_index()  # Only sum numeric columns
         fig_area = px.area(area_data, x='Date', y='Value', title='Total Value Area Chart')
         st.plotly_chart(fig_area, key="area_chart_1")
 
@@ -118,7 +117,7 @@ def main():
     # 13. Waterfall Chart
     with col3:
         st.subheader("Waterfall Chart")
-        waterfall_data = df.groupby('Date')['Value'].sum().reset_index()
+        waterfall_data = df.groupby('Date').sum(numeric_only=True).reset_index()  # Only sum numeric columns
         waterfall_data['Previous Value'] = waterfall_data['Value'].shift(1).fillna(0)
         waterfall_data['Change'] = waterfall_data['Value'] - waterfall_data['Previous Value']
         waterfall_data['Total'] = waterfall_data['Change'].cumsum()
@@ -140,16 +139,17 @@ def main():
     # 14. Sparklines
     with col3:
         st.subheader("Sparklines")
-        sparklines_data = df.groupby('Date').sum()['Value']
+        sparklines_data = df.groupby('Date').sum(numeric_only=True)['Value']  # Only sum numeric columns
         st.line_chart(sparklines_data)
 
     # 15. Stacked Bar Chart
     with col3:
         st.subheader("Stacked Bar Chart")
-        stacked_data = df.groupby(['Country', 'Import_Export']).sum().reset_index()
+        stacked_data = df.groupby(['Country', 'Import_Export']).sum(numeric_only=True).reset_index()  # Only sum numeric columns
         fig_stacked = px.bar(stacked_data, x='Country', y='Value', color='Import_Export', title='Stacked Bar Chart of Value by Country')
         st.plotly_chart(fig_stacked, key="stacked_bar_chart_1")
 
 # Run the app
 if __name__ == '__main__':
     main()
+
