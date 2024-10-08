@@ -45,34 +45,34 @@ def main():
         st.subheader("Bar Chart")
         bar_data = df['Country'].value_counts()
         fig_bar = px.bar(bar_data, x=bar_data.index, y=bar_data.values, labels={'x': 'Country', 'y': 'Count'})
-        st.plotly_chart(fig_bar, key="bar_chart")
+        st.plotly_chart(fig_bar, key="bar_chart_1")
 
     # 2. Line Chart
     with col1:
         st.subheader("Line Chart")
         line_data = df.groupby('Date').sum().reset_index()
         fig_line = px.line(line_data, x='Date', y='Value', title='Total Value Over Time')
-        st.plotly_chart(fig_line, key="line_chart")
+        st.plotly_chart(fig_line, key="line_chart_1")
 
     # 3. Pie Chart
     with col1:
         st.subheader("Pie Chart")
         pie_data = df['Shipping_Method'].value_counts()
         fig_pie = px.pie(pie_data, names=pie_data.index, values=pie_data.values, title='Shipping Method Distribution')
-        st.plotly_chart(fig_pie, key="pie_chart")
+        st.plotly_chart(fig_pie, key="pie_chart_1")
 
     # 4. Area Chart
     with col1:
         st.subheader("Area Chart")
         area_data = df.groupby('Date').sum().reset_index()
         fig_area = px.area(area_data, x='Date', y='Value', title='Total Value Area Chart')
-        st.plotly_chart(fig_area, key="area_chart")
+        st.plotly_chart(fig_area, key="area_chart_1")
 
     # 5. Scatter Plot
     with col1:
         st.subheader("Scatter Plot")
         fig_scatter = px.scatter(df, x='Quantity', y='Value', color='Country', title='Quantity vs Value Scatter Plot')
-        st.plotly_chart(fig_scatter, key="scatter_plot")
+        st.plotly_chart(fig_scatter, key="scatter_plot_1")
 
     # 6. Histogram
     with col2:
@@ -94,36 +94,26 @@ def main():
     with col2:
         st.subheader("Box Plot")
         fig_box = px.box(df, x='Country', y='Value', title='Box Plot of Value by Country')
-        st.plotly_chart(fig_box, key="box_plot")
-
-    # 9. Word Cloud
-    with col2:
-        st.subheader("Word Cloud")
-        text = " ".join(df['Country'].tolist())
-        wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-        plt.figure(figsize=(5, 4))
-        plt.imshow(wordcloud, interpolation='bilinear')
-        plt.axis('off')
-        st.pyplot(plt)
+        st.plotly_chart(fig_box, key="box_plot_1")
 
     # 10. Treemap
     with col3:
         st.subheader("Treemap")
         fig_treemap = px.treemap(df, path=['Country', 'Import_Export'], values='Value', title='Treemap of Value by Country and Import/Export')
-        st.plotly_chart(fig_treemap, key="treemap")
+        st.plotly_chart(fig_treemap, key="treemap_1")
 
     # 11. Violin Plot
     with col3:
         st.subheader("Violin Plot")
         fig_violin = px.violin(df, y='Value', box=True, points="all", title='Violin Plot of Value')
-        st.plotly_chart(fig_violin, key="violin_plot")
+        st.plotly_chart(fig_violin, key="violin_plot_1")
 
     # 12. Funnel Chart
     with col3:
         st.subheader("Funnel Chart")
         funnel_data = df.groupby('Shipping_Method').size().reset_index(name='counts')
         fig_funnel = px.funnel(funnel_data, x='Shipping_Method', y='counts', title='Funnel Chart of Shipping Methods')
-        st.plotly_chart(fig_funnel, key="funnel_chart")
+        st.plotly_chart(fig_funnel, key="funnel_chart_1")
 
     # 13. Waterfall Chart
     with col3:
@@ -145,7 +135,7 @@ def main():
         ))
 
         fig_waterfall.update_layout(title="Waterfall Chart of Value", xaxis_title="Date", yaxis_title="Change in Value")
-        st.plotly_chart(fig_waterfall, key="waterfall_chart")
+        st.plotly_chart(fig_waterfall, key="waterfall_chart_1")
 
     # 14. Sparklines
     with col3:
@@ -153,19 +143,12 @@ def main():
         sparklines_data = df.groupby('Date').sum()['Value']
         st.line_chart(sparklines_data)
 
-    # 15. Area Chart
-    with col3:
-        st.subheader("Area Chart")
-        area_data = df.groupby('Date').sum().reset_index()
-        fig_area = px.area(area_data, x='Date', y='Value', title='Total Value Area Chart')
-        st.plotly_chart(fig_area, key="area_chart")
-
-    # 16. Stacked Bar Chart
+    # 15. Stacked Bar Chart
     with col3:
         st.subheader("Stacked Bar Chart")
         stacked_data = df.groupby(['Country', 'Import_Export']).sum().reset_index()
         fig_stacked = px.bar(stacked_data, x='Country', y='Value', color='Import_Export', title='Stacked Bar Chart of Value by Country')
-        st.plotly_chart(fig_stacked, key="stacked_bar_chart")
+        st.plotly_chart(fig_stacked, key="stacked_bar_chart_1")
 
 # Run the app
 if __name__ == '__main__':
