@@ -9,7 +9,7 @@ from wordcloud import WordCloud
 import networkx as nx
 
 # Load the dataset
-df = pd.read_csv('/mnt/data/Project Dataset.csv')
+df = pd.read_csv('Project Dataset.csv')
 
 # Sample DataFrame based on given instruction
 sd = df.sample(n=3001, random_state=55027)
