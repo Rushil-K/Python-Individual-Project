@@ -40,37 +40,37 @@ visualization_type = st.sidebar.selectbox(
 # Bar Chart
 if visualization_type == 'Bar Chart':
     st.subheader("Bar Chart")
-    fig = px.bar(filtered_df, x='Country', y='Value', color='Product', title="Bar Chart")
+    fig = px.bar(filtered_df, x='Quantity', y='Value', color='Product', title="Bar Chart")
     st.plotly_chart(fig)
 
 # Line Chart
 elif visualization_type == 'Line Chart':
     st.subheader("Line Chart")
-    fig = px.line(filtered_df, x='Date', y='Value', color='Country', title="Line Chart")
+    fig = px.line(filtered_df, x='Date', y='Value', color='Payment_Terms', title="Line Chart")
     st.plotly_chart(fig)
 
 # Pie Chart
 elif visualization_type == 'Pie Chart':
     st.subheader("Pie Chart")
-    fig = px.pie(filtered_df, values='Value', names='Product', title="Pie Chart")
+    fig = px.pie(filtered_df, values='Value', names='Category', title="Pie Chart")
     st.plotly_chart(fig)
 
 # Scatter Plot
 elif visualization_type == 'Scatter Plot':
     st.subheader("Scatter Plot")
-    fig = px.scatter(filtered_df, x='Quantity', y='Value', color='Country', title="Scatter Plot")
+    fig = px.scatter(filtered_df, x='Quantity', y='Value', color='Import_Export', title="Scatter Plot")
     st.plotly_chart(fig)
 
 # Area Chart
 elif visualization_type == 'Area Chart':
     st.subheader("Area Chart")
-    fig = px.area(filtered_df, x='Date', y='Value', color='Country', title="Area Chart")
+    fig = px.area(filtered_df, x='Date', y='Value', color='Import_Export', title="Area Chart")
     st.plotly_chart(fig)
 
 # Heat Map
 elif visualization_type == 'Heat Map':
     st.subheader("Heat Map")
-    heat_data = filtered_df.pivot_table(index='Country', columns='Product', values='Value', aggfunc='mean')
+    heat_data = filtered_df.pivot_table(index='Shipping_Method', columns='Category', values='Value', aggfunc='mean')
     sns.heatmap(heat_data, cmap="YlGnBu")
     st.pyplot()
 
@@ -84,7 +84,7 @@ elif visualization_type == 'Choropleth Map':
 # Histogram
 elif visualization_type == 'Histogram':
     st.subheader("Histogram")
-    fig = px.histogram(filtered_df, x='Quantity', title="Histogram")
+    fig = px.histogram(filtered_df, x='Value', title="Histogram")
     st.plotly_chart(fig)
 
 # Bullet Graph (simplified using a bar graph)
@@ -101,25 +101,25 @@ elif visualization_type == 'Bullet Graph':
 # Treemap
 elif visualization_type == 'Treemap':
     st.subheader("Treemap")
-    fig = px.treemap(filtered_df, path=['Country', 'Product'], values='Value', title="Treemap")
+    fig = px.treemap(filtered_df, path=['Category', 'Payment_Terms'], values='Value', title="Treemap")
     st.plotly_chart(fig)
 
 # Box Plot
 elif visualization_type == 'Box Plot':
     st.subheader("Box Plot")
-    fig = px.box(filtered_df, x='Country', y='Value', color='Country', title="Box Plot")
+    fig = px.box(filtered_df, x='Quantity', y='Value', color='Category', title="Box Plot")
     st.plotly_chart(fig)
 
 # Violin Plot
 elif visualization_type == 'Violin Plot':
     st.subheader("Violin Plot")
-    fig = px.violin(filtered_df, y='Value', x='Country', color='Country', title="Violin Plot")
+    fig = px.violin(filtered_df, y='Value', x='Quantity', color='Category', title="Violin Plot")
     st.plotly_chart(fig)
 
 # Donut Chart
 elif visualization_type == 'Donut Chart':
     st.subheader("Donut Chart")
-    fig = px.pie(filtered_df, values='Value', names='Product', hole=0.3, title="Donut Chart")
+    fig = px.pie(filtered_df, values='Value', names='Category', hole=0.3, title="Donut Chart")
     st.plotly_chart(fig)
 
 # Waterfall Chart
@@ -136,7 +136,7 @@ elif visualization_type == 'Waterfall Chart':
 # Funnel Chart
 elif visualization_type == 'Funnel Chart':
     st.subheader("Funnel Chart")
-    fig = px.funnel(filtered_df, x='Country', y='Value', color='Product', title="Funnel Chart")
+    fig = px.funnel(filtered_df, x='Payment_Terms', y='Value', color='Product', title="Funnel Chart")
     st.plotly_chart(fig)
 
 # Radar Chart
@@ -153,19 +153,15 @@ elif visualization_type == 'Radar Chart':
 # Stacked Bar Chart
 elif visualization_type == 'Stacked Bar':
     st.subheader("Stacked Bar Chart")
-    fig = px.bar(filtered_df, x='Country', y='Value', color='Product', title="Stacked Bar Chart")
+    fig = px.bar(filtered_df, x='Category', y='Value', color='Payment_Terms', title="Stacked Bar Chart")
     st.plotly_chart(fig)
 
 # Timeline Visualization
 elif visualization_type == 'Timeline':
     st.subheader("Timeline Visualization")
-    fig = px.timeline(filtered_df, x_start='Date', x_end='Date', y='Product', color='Country', title="Timeline")
+    fig = px.timeline(filtered_df, x_start='Date', x_end='Date', y='Category', color='Payment_Terms', title="Timeline")
     st.plotly_chart(fig)
 
-# Dendrogram (placeholder)
-elif visualization_type == 'Dendrogram':
-    st.subheader("Dendrogram - Placeholder")
-    st.text("Dendrogram requires clustering logic, so it is a placeholder for now.")
 
 # Word Cloud
 elif visualization_type == 'Word Cloud':
@@ -180,8 +176,8 @@ elif visualization_type == 'Word Cloud':
 elif visualization_type == 'Network Graph':
     st.subheader("Network Graph")
     G = nx.Graph()
-    G.add_nodes_from(cat['Supplier'].unique())
-    G.add_edges_from(zip(cat['Supplier'], cat['Customer']))
+    G.add_nodes_from(cat['Shipping_Method'].unique())
+    G.add_edges_from(zip(cat['Supplier'], cat['Payment_Terms']))
     pos = nx.spring_layout(G)
     plt.figure(figsize=(8, 8))
     nx.draw(G, pos, with_labels=True, node_size=50, font_size=10)
