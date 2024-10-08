@@ -10,6 +10,12 @@ import plotly.express as px
 # Load Data
 df = pd.read_csv("Project Dataset.csv")
 sd = df.sample(n=3001, random_state=55027)
+
+# Check for required columns
+required_columns = ['Quantity', 'Value', 'Date', 'Weight', 'Country', 'Import_Export', 'Payment_Terms']
+if not all(col in sd.columns for col in required_columns):
+    raise KeyError("Missing required columns in the dataset")
+
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
 cat = sd[['Country', 'Import_Export', 'Payment_Terms']]
 
@@ -46,9 +52,13 @@ selected_date_range = st.sidebar.date_input("Select Date Range", [date_min, date
 # Apply filters to the datasets
 filtered_data = filtered_data[
     (filtered_data['Date'].dt.date >= selected_date_range[0]) &
-    (filtered_data['Date'].dt.date <= selected_date_range[1]) &
-    (cat_data['Import_Export'].isin(selected_import_export)) &
-    (cat_data['Payment_Terms'].isin(selected_payment_terms))
+    (filtered_data['Date'].dt.date <= selected_date_range[1])
+]
+
+# Further filter the data based on the Import/Export and Payment Terms selections
+filtered_data = filtered_data[
+    cat_data['Import_Export'].isin(selected_import_export) &
+    cat_data['Payment_Terms'].isin(selected_payment_terms)
 ]
 
 # Visualizations
@@ -204,15 +214,15 @@ circular_sizes = [0.9, 0.6]  # Inner and outer radius
 wedges, texts, autotexts = ax2.pie(vals, labels=vals.index, autopct='%.1f%%', startangle=90, radius=circular_sizes[0])
 centre_circle = plt.Circle((0, 0), circular_sizes[1], color='white')
 fig2.gca().add_artist(centre_circle)
-ax2.axis('equal')
+ax2.axis('equal')  # Equal aspect ratio ensures pie chart is circular.
 st.pyplot(fig2)
 
 # 24. Stacked Bar/Column Charts
-st.subheader("Stacked Bar Chart: Quantity by Import/Export")
-stacked_data = filtered_data.groupby(['Date', 'Import_Export'])['Quantity'].sum().unstack()
+st.subheader("Stacked Bar Chart: Quantity by Payment Terms and Import/Export")
+stacked_data = filtered_data.groupby(['Payment_Terms', 'Import_Export'])['Quantity'].sum().unstack()
 stacked_data.plot(kind='bar', stacked=True)
-plt.title('Stacked Bar Chart of Quantity Over Time')
-plt.xlabel('Date')
+plt.title('Stacked Bar Chart of Quantity by Payment Terms and Import/Export')
+plt.xlabel('Payment Terms')
 plt.ylabel('Quantity')
 st.pyplot()
 
@@ -247,4 +257,3 @@ plt.figure(figsize=(10, 5))
 dendrogram(linkage_data)
 plt.title('Dendrogram')
 st.pyplot()
-
