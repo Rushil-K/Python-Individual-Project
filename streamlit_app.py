@@ -82,7 +82,7 @@ plt.title('Box-Whisker Plot for Quantity, Value, and Weight')
 plt.show()
 
 # Monthly trend analysis
-monthly_data = ncd.resample('M', on='Date').mean()
+monthly_data = ncd.resample('ME', on='Date').mean()
 
 plt.figure(figsize=(10, 6))
 plt.plot(monthly_data.index, monthly_data['Quantity'], label='Average Quantity', marker='o')
