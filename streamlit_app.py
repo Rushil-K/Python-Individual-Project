@@ -7,7 +7,7 @@ import networkx as nx
 from wordcloud import WordCloud
 
 # Load the pre-sampled data
-df = pd.read_csv('/mnt/data/Project Dataset.csv')
+df = pd.read_csv('Project Dataset.csv')
 sd = df.sample(n=3001, random_state=55027)
 
 # Streamlit Dashboard Title
