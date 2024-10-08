@@ -1,132 +1,321 @@
-import streamlit as st
 import pandas as pd
 import numpy as np
+import scipy.stats as stats
 import seaborn as sns
 import matplotlib.pyplot as plt
-import scipy.stats as stats
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 import plotly.express as px
-import plotly.graph_objects as go
 import networkx as nx
 
-# Load Data
-@st.cache_data
-def load_data():
-    data = pd.read_csv("Project Dataset.csv")
-    sd = data.sample(n=3001, random_state=55027)
-    ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
-    return ncd, sd
+# Load the dataset
+data = pd.read_csv("Project Dataset.csv")
 
-ncd, sd = load_data()
+# Sample the data
+sd = data.sample(n=3001, random_state=55027)
 
-# Dashboard Layout
-st.title("Data Analysis Dashboard")
+# Select numerical columns
+ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
 
-st.sidebar.header("Navigation")
-pages = ["Summary", "Normality Tests", "Regression Analysis", "Interactive Visualizations"]
-page = st.sidebar.selectbox("Choose a section", pages)
-
-if page == "Summary":
-    st.subheader("Dataset Summary")
-    st.write(ncd.describe())
-    st.write("Correlation Matrix:")
-    st.write(ncd.corr())
-    st.write(sns.pairplot(ncd))
-
-    # Boxplots
-    st.subheader("Boxplots for Quantity, Value, and Weight")
-    st.write(sns.boxplot(data=ncd[['Quantity', 'Value', 'Weight']], showmeans=True))
+# Visualization
+# Shapiro-Wilk test for normality
+for col in ['Quantity', 'Value', 'Weight']:
+    stat, p = stats.shapiro(ncd[col])
+    print(f"Shapiro-Wilk Test for {col} -\n Statistic: {stat}, p-value: {p}\n")
     
-elif page == "Normality Tests":
-    st.subheader("Normality Tests")
+    plt.figure(figsize=(12, 4))
     
-    for col in ['Quantity', 'Value', 'Weight']:
-        # Shapiro-Wilk Test
-        stat, p = stats.shapiro(ncd[col])
-        st.write(f"Shapiro-Wilk Test for {col}: Statistic={stat}, p-value={p}")
+    plt.subplot(1, 2, 1)
+    sns.histplot(ncd[col], kde=True)
+    plt.title(f'Histogram of {col}')
+    
+    plt.subplot(1, 2, 2)
+    stats.probplot(ncd[col], dist="norm", plot=plt)
+    plt.title(f'Q-Q Plot of {col}')
+    
+    plt.show()
 
-        # Q-Q Plots
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
-        sns.histplot(ncd[col], kde=True, ax=ax1)
-        stats.probplot(ncd[col], dist="norm", plot=ax2)
-        st.pyplot(fig)
+# Kolmogorov-Smirnov test for normality
+for col in ['Quantity', 'Value', 'Weight']:
+    ks_stat, ks_p = stats.kstest(ncd[col], 'norm', args=(ncd[col].mean(), ncd[col].std()))
+    print(f"Kolmogorov-Smirnov Test for {col} -\n KS Statistic: {ks_stat}, p-value: {ks_p}\n")
+    
+    plt.figure(figsize=(12, 4))
+    
+    plt.subplot(1, 2, 1)
+    sns.histplot(ncd[col], kde=True)
+    plt.title(f'Histogram of {col}')
+    
+    plt.subplot(1, 2, 2)
+    stats.probplot(ncd[col], dist="norm", plot=plt)
+    plt.title(f'Q-Q Plot of {col}')
+    
+    plt.show()
 
-elif page == "Regression Analysis":
-    st.subheader("Linear and Polynomial Regression")
+# Anderson-Darling test for normality
+for col in ['Quantity', 'Value', 'Weight']:
+    result = stats.anderson(ncd[col])
+    print(f"Anderson-Darling Test for {col} -\n Statistic: {result.statistic},\n Critical Values: {result.critical_values},\n Significance Levels: {result.significance_level}\n")
+    
+    plt.figure(figsize=(12, 4))
+    
+    plt.subplot(1, 2, 1)
+    sns.histplot(ncd[col], kde=True)
+    plt.title(f'Histogram of {col}')
+    
+    plt.subplot(1, 2, 2)
+    stats.probplot(ncd[col], dist="norm", plot=plt)
+    plt.title(f'Q-Q Plot of {col}')
+    
+    plt.show()
 
-    # Case 1: Value as dependent variable (Linear Regression)
-    X = ncd[['Quantity', 'Weight']]
-    y = ncd['Value']
+# Jarque-Bera Test for normality
+for col in ['Quantity', 'Value', 'Weight']:
+    jb_stat, jb_p = stats.jarque_bera(ncd[col])
+    print(f"Jarque-Bera Test for {col} -\n Statistic: {jb_stat}, p-value: {jb_p}\n")
+    
+    plt.figure(figsize=(12, 4))
+    
+    plt.subplot(1, 2, 1)
+    sns.histplot(ncd[col], kde=True)
+    plt.title(f'Histogram of {col}')
+    
+    plt.subplot(1, 2, 2)
+    stats.probplot(ncd[col], dist="norm", plot=plt)
+    plt.title(f'Q-Q Plot of {col}')
+    
+    plt.show()
 
-    lin_reg = LinearRegression()
-    lin_reg.fit(X, y)
-    y_pred_lin = lin_reg.predict(X)
+# Linear Regression
+# Case 1: Value as dependent variable
+X = ncd[['Quantity', 'Weight']]
+y = ncd['Value']
 
-    fig_lin, ax_lin = plt.subplots()
-    ax_lin.scatter(X['Quantity'], y, color='blue')
-    ax_lin.plot(X['Quantity'], y_pred_lin, color='red', label='Linear Regression')
-    ax_lin.set_xlabel('Quantity')
-    ax_lin.set_ylabel('Value')
-    ax_lin.set_title('Linear Regression')
-    st.pyplot(fig_lin)
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+y_pred_lin = lin_reg.predict(X)
 
-    # Polynomial Regression
-    poly = PolynomialFeatures(degree=2)
-    X_poly = poly.fit_transform(X)
-    poly_reg = LinearRegression()
-    poly_reg.fit(X_poly, y)
-    y_pred_poly = poly_reg.predict(X_poly)
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Quantity'], y, color='blue')
+plt.plot(X['Quantity'], y_pred_lin, color='red', label='Linear Regression')
+plt.xlabel('Quantity')
+plt.ylabel('Value')
+plt.title('Case 1: Linear Regression')
+plt.legend()
+plt.show()
 
-    fig_poly, ax_poly = plt.subplots()
-    ax_poly.scatter(X['Quantity'], y, color='blue')
-    ax_poly.plot(X['Quantity'], y_pred_poly, color='green', label='Polynomial Regression')
-    ax_poly.set_xlabel('Quantity')
-    ax_poly.set_ylabel('Value')
-    ax_poly.set_title('Polynomial Regression')
-    st.pyplot(fig_poly)
+# Case 2: Quantity as dependent variable
+X = ncd[['Value', 'Weight']]
+y = ncd['Quantity']
 
-elif page == "Interactive Visualizations":
-    st.subheader("Interactive Visualizations")
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+y_pred_lin = lin_reg.predict(X)
 
-    # Correlation Heatmap
-    fig_corr = px.imshow(ncd.corr().values,
-                         x=ncd.columns,
-                         y=ncd.columns,
-                         title="Correlation Heatmap")
-    st.plotly_chart(fig_corr)
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Value'], y, color='blue')
+plt.plot(X['Value'], y_pred_lin, color='red', label='Linear Regression')
+plt.xlabel('Value')
+plt.ylabel('Quantity')
+plt.title('Case 2: Linear Regression')
+plt.legend()
+plt.show()
 
-    # Interactive Scatter Plot
-    fig_scatter = px.scatter(ncd, x='Quantity', y='Value', color='Weight',
-                             hover_data=['Date'], title='Quantity vs Value')
-    st.plotly_chart(fig_scatter)
+# Case 3: Weight as dependent variable
+X = ncd[['Value', 'Quantity']]
+y = ncd['Weight']
 
-    # Monthly Trend Line Plot
-    ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
-    monthly_data = ncd.resample('M', on='Date').mean()
+lin_reg = LinearRegression()
+lin_reg.fit(X, y)
+y_pred_lin = lin_reg.predict(X)
 
-    fig_monthly = px.line(monthly_data, x=monthly_data.index, y='Quantity', title='Monthly Quantity Trend')
-    st.plotly_chart(fig_monthly)
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Value'], y, color='blue')
+plt.plot(X['Value'], y_pred_lin, color='red', label='Linear Regression')
+plt.xlabel('Value')
+plt.ylabel('Weight')
+plt.title('Case 3: Linear Regression')
+plt.legend()
+plt.show()
 
-    # Interactive World Map
-    fig_map = px.choropleth(locations=sd['Country'].unique(),
-                            locationmode='country names',
-                            color=sd['Country'].value_counts(),
-                            title='Countries Present in Dataset')
-    st.plotly_chart(fig_map)
+# Polynomial Regression
+# Case 1: Value as dependent variable
+X = ncd[['Quantity', 'Weight']]
+y = ncd['Value']
 
-    # Import-Export Network Graph
-    graph = nx.DiGraph()
-    countries = sd['Country'].unique()
-    graph.add_nodes_from(countries)
-    for _, row in sd.iterrows():
-        if row['Import_Export'] == 'Import':
-            graph.add_edge(row['Country'], 'Your Country')
-        elif row['Import_Export'] == 'Export':
-            graph.add_edge('Your Country', row['Country'])
+poly = PolynomialFeatures(degree=2)
+X_poly = poly.fit_transform(X)
+poly_reg = LinearRegression()
+poly_reg.fit(X_poly, y)
+y_pred_poly = poly_reg.predict(X_poly)
 
-    pos = nx.spring_layout(graph)
-    edge_trace = go.Scatter(x=[], y=[], line=dict(width=0.5, color='#888'), hoverinfo='none', mode='lines')
-    node_trace = go.Scatter(x=[], y=[], mode='markers', hoverinfo='text', marker=dict(showscale=True))
-    fig_network = go.Figure(data=[edge_trace, node_trace], layout=go.Layout(title='Import-Export Network'))
-    st.plotly_chart(fig_network)
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Quantity'], y, color='blue')
+plt.plot(X['Quantity'], y_pred_poly, color='green', label='Polynomial Regression')
+plt.xlabel('Quantity')
+plt.ylabel('Value')
+plt.title('Case 1: Polynomial Regression')
+plt.legend()
+plt.show()
+
+# Case 2: Quantity as dependent variable
+X = ncd[['Value', 'Weight']]
+y = ncd['Quantity']
+
+poly = PolynomialFeatures(degree=2)
+X_poly = poly.fit_transform(X)
+poly_reg = LinearRegression()
+poly_reg.fit(X_poly, y)
+y_pred_poly = poly_reg.predict(X_poly)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Value'], y, color='blue')
+plt.plot(X['Value'], y_pred_poly, color='green', label='Polynomial Regression')
+plt.xlabel('Value')
+plt.ylabel('Quantity')
+plt.title('Case 2: Polynomial Regression')
+plt.legend()
+plt.show()
+
+# Case 3: Weight as dependent variable
+X = ncd[['Value', 'Quantity']]
+y = ncd['Weight']
+
+poly = PolynomialFeatures(degree=2)
+X_poly = poly.fit_transform(X)
+poly_reg = LinearRegression()
+poly_reg.fit(X_poly, y)
+y_pred_poly = poly_reg.predict(X_poly)
+
+plt.figure(figsize=(10, 6))
+plt.scatter(X['Value'], y, color='blue')
+plt.plot(X['Value'], y_pred_poly, color='green', label='Polynomial Regression')
+plt.xlabel('Value')
+plt.ylabel('Weight')
+plt.title('Case 3: Polynomial Regression')
+plt.legend()
+plt.show()
+
+# Box-Whisker Plot
+ncd.boxplot(column=['Quantity', 'Value', 'Weight'], showmeans=True)
+plt.title('Box-Whisker Plot for Quantity, Value, and Weight')
+plt.show()
+
+for column in ncd.select_dtypes(include=np.number).columns:
+    plt.figure()  # Create a new figure for each plot
+    ncd.boxplot(column=[column], showmeans=True)
+    plt.title(f'Box-Whisker Plot for {column}')
+    plt.show()
+
+sns.pairplot(ncd)
+plt.show()
+
+plt.scatter(ncd['Quantity'], ncd['Value'], alpha=0.5)
+plt.xlabel('Quantity')
+plt.ylabel('Value')
+plt.title('Scatter Plot of Quantity vs Value')
+plt.show()
+
+plt.scatter(ncd['Quantity'], ncd['Weight'], alpha=0.5)
+plt.xlabel('Quantity')
+plt.ylabel('Weight')
+plt.title('Scatter Plot of Quantity vs Weight')
+plt.show()
+
+plt.scatter(ncd['Value'], ncd['Weight'], alpha=0.5)
+plt.xlabel('Value')
+plt.ylabel('Weight')
+plt.title('Scatter Plot of Value vs Weight')
+plt.show()
+
+# Monthly trend analysis
+ncd['Date'] = pd.to_datetime(ncd['Date'], format='%d-%m-%Y')
+ncd = ncd.sort_values(by='Date')
+
+monthly_data = ncd.resample('ME', on='Date').mean()
+
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_data.index, monthly_data['Quantity'], label='Quantity Trend', marker='o')
+plt.xlabel('Monthly')
+plt.ylabel('Average Quantity')
+plt.title('Monthly Trend of Quantity')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_data.index, monthly_data['Value'], label='Value Trend', marker='o')
+plt.xlabel('Monthly')
+plt.ylabel('Average Value')
+plt.title('Monthly Trend of Value')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(monthly_data.index, monthly_data['Weight'], label='Weight Trend', marker='o')
+plt.xlabel('Monthly')
+plt.ylabel('Average Weight')
+plt.title('Monthly Trend of Weight')
+plt.legend()
+plt.show()
+
+# Yearly trend analysis
+yearly_data = ncd.resample('YE', on='Date').mean()
+
+plt.figure(figsize=(10, 6))
+plt.plot(yearly_data.index, yearly_data['Quantity'], label='Quantity Trend', marker='o')
+plt.xlabel('Yearly')
+plt.ylabel('Average Quantity')
+plt.title('Yearly Trend of Quantity')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(yearly_data.index, yearly_data['Value'], label='Value Trend', marker='o')
+plt.xlabel('Yearly')
+plt.ylabel('Average Value')
+plt.title('Yearly Trend of Value')
+plt.legend()
+plt.show()
+
+plt.figure(figsize=(10, 6))
+plt.plot(yearly_data.index, yearly_data['Weight'], label='Weight Trend', marker='o')
+plt.xlabel('Yearly')
+plt.ylabel('Average Weight')
+plt.title('Yearly Trend of Weight')
+plt.legend()
+plt.show()
+
+# Correlation Analysis
+correlation_matrix = ncd[['Quantity', 'Value', 'Weight']].corr()
+sns.heatmap(correlation_matrix, annot=True, cmap='coolwarm')
+plt.title('Correlation Matrix')
+plt.show()
+
+# Categorical Data Analysis
+category_counts = ncd['Category'].value_counts()
+plt.figure(figsize=(10, 6))
+sns.barplot(x=category_counts.index, y=category_counts.values)
+plt.title('Category Counts')
+plt.xticks(rotation=90)
+plt.show()
+
+# Geospatial Analysis
+# Choropleth Map
+# You might need to adjust based on your dataset for country mapping
+fig = px.choropleth(ncd, 
+                    locations='Country', 
+                    locationmode='country names',
+                    color='Value',
+                    hover_name='Country',
+                    title='Choropleth Map of Values by Country')
+fig.show()
+
+# Network Graph
+G = nx.from_pandas_edgelist(ncd, source='Country', target='Partner Country', edge_attr='Value', create_using=nx.DiGraph())
+plt.figure(figsize=(12, 12))
+pos = nx.spring_layout(G)
+nx.draw_networkx_nodes(G, pos, node_size=700)
+nx.draw_networkx_edges(G, pos, arrowstyle='-|>', arrowsize=10)
+nx.draw_networkx_labels(G, pos, font_size=10)
+plt.title('Network Graph of Import/Export Relationships')
+plt.show()
