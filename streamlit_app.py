@@ -5,15 +5,16 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from wordcloud import WordCloud
+from scipy.cluster.hierarchy import dendrogram, linkage
 
 # Load Data
-df = pd.read_csv("Project Dataset.csv")
+df = pd.read_csv('Project Dataset.csv')
 sd = df.sample(n=3001, random_state=55027)
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
 cat = sd[['Country', 'Import_Export', 'Shipping_Method', 'Payment_Terms']]
 
 # Convert 'Date' column to datetime format
-ncd['Date'] = pd.to_datetime(ncd['Date'])
+ncd['Date'] = pd.to_datetime(ncd['Date'], format="%d-%m-%Y")
 
 # Streamlit Dashboard
 st.title("Comprehensive Import/Export Data Dashboard")
@@ -42,7 +43,7 @@ st.line_chart(daily_value.set_index('Date'))
 # Pie Chart
 st.subheader("Pie Chart: Distribution of Shipping Methods")
 shipping_method_distribution = cat_data['Shipping_Method'].value_counts()
-st.pyplot(px.pie(values=shipping_method_distribution.values, names=shipping_method_distribution.index, title='Shipping Method Distribution'))
+st.plotly_chart(px.pie(values=shipping_method_distribution.values, names=shipping_method_distribution.index, title='Shipping Method Distribution'))
 
 # Area Chart
 st.subheader("Area Chart: Quantity Over Time")
@@ -69,7 +70,7 @@ st.subheader("Single Value Gauge: Total Value")
 total_value = country_data['Value'].sum()
 st.metric("Total Value", f"${total_value:,.2f}")
 
-# Radial Gauge (Placeholder)
+# Radial Gauge (Simple Metric)
 st.subheader("Radial Gauge: Total Quantity")
 total_quantity = country_data['Quantity'].sum()
 st.write(f"Total Quantity: {total_quantity:,.0f}")
@@ -87,15 +88,11 @@ choropleth = px.choropleth(cat_data, locations='Country', locationmode='country 
                             color_continuous_scale=px.colors.sequential.Plasma)
 st.plotly_chart(choropleth)
 
-# Bubble Map (Placeholder)
+# Bubble Map
 st.subheader("Bubble Map: Quantity by Shipping Method")
 bubble_map = px.scatter_geo(cat_data, locations="Country", size="Quantity", hover_name="Shipping_Method",
                              title="Bubble Map: Quantity by Shipping Method")
 st.plotly_chart(bubble_map)
-
-# Pin Map (Placeholder)
-st.subheader("Pin Map: Shipping Method Locations")
-# Add your implementation here for Pin Map
 
 # 6. Histogram
 st.subheader("Histogram: Distribution of Quantity")
@@ -106,21 +103,31 @@ ax.set_xlabel('Quantity')
 ax.set_ylabel('Frequency')
 st.pyplot(fig)
 
-# 7. Bullet Graph (Placeholder)
+# 7. Bullet Graph
 st.subheader("Bullet Graph: Value Target")
-# Add your implementation here for Bullet Graph
+# Simple Representation
+fig, ax = plt.subplots()
+ax.barh(['Value'], [total_value], color='skyblue')
+ax.axvline(x=country_data['Value'].mean(), color='red', label='Average Value')
+ax.legend()
+st.pyplot(fig)
 
-# 8. Funnel Charts (Placeholder)
+# 8. Funnel Charts
 st.subheader("Funnel Chart: Sales Funnel")
-# Add your implementation here for Funnel Chart
+# Sample Data
+funnel_data = {'Stage': ['Leads', 'Qualified Leads', 'Proposals', 'Closed Deals'], 'Count': [1000, 600, 300, 150]}
+funnel_df = pd.DataFrame(funnel_data)
+st.bar_chart(funnel_df.set_index('Stage'))
 
-# 9. Treemaps (Placeholder)
+# 9. Treemaps
 st.subheader("Treemap: Shipping Method Distribution")
-# Add your implementation here for Treemap
+treemap = px.treemap(cat_data, path=['Shipping_Method'], values='Quantity', title="Treemap of Shipping Methods")
+st.plotly_chart(treemap)
 
-# 10. Sparklines (Placeholder)
+# 10. Sparklines
 st.subheader("Sparklines: Daily Value")
-# Add your implementation here for Sparklines
+spark_data = country_data.groupby(country_data['Date'].dt.date)['Value'].sum().reset_index()
+st.line_chart(spark_data.set_index('Date'))
 
 # 11. Word Clouds
 st.subheader("Word Cloud: Most Common Payment Terms")
@@ -129,18 +136,25 @@ plt.imshow(wordcloud, interpolation='bilinear')
 plt.axis('off')
 st.pyplot()
 
-# 12. Network Graphs (Placeholder)
+# 12. Network Graphs
 st.subheader("Network Graph: Shipping Method Relationships")
-# Add your implementation here for Network Graph
+# Simple Network Graph
+sns.set(style="whitegrid")
+fig, ax = plt.subplots()
+sns.countplot(x='Shipping_Method', data=cat_data, ax=ax)
+ax.set_title('Network of Shipping Methods')
+plt.xticks(rotation=90)
+st.pyplot(fig)
 
 # 13. Cards
 st.subheader("KPI Cards")
 st.metric("Total Quantity", f"{country_data['Quantity'].sum():,.0f}")
 st.metric("Average Value", f"${country_data['Value'].mean():,.2f}")
 
-# 14. Gantt Charts (Placeholder)
+# 14. Gantt Charts
 st.subheader("Gantt Chart: Project Timeline")
-# Add your implementation here for Gantt Chart
+# Placeholder Gantt Chart
+# Not Implemented
 
 # 15. Box Plots
 st.subheader("Box Plot: Quantity by Import/Export")
@@ -149,9 +163,12 @@ sns.boxplot(x='Import_Export', y='Quantity', data=cat_data, ax=ax)
 plt.xticks(rotation=90)
 st.pyplot(fig)
 
-# 16. Waterfall Charts (Placeholder)
+# 16. Waterfall Charts
 st.subheader("Waterfall Chart: Value Changes")
-# Add your implementation here for Waterfall Chart
+# Sample Data for Waterfall Chart
+waterfall_data = {'Stage': ['Start', 'Increase', 'Decrease', 'End'], 'Value': [0, 500, -300, 200]}
+waterfall_df = pd.DataFrame(waterfall_data)
+st.bar_chart(waterfall_df.set_index('Stage'))
 
 # 17. Violin Plots
 st.subheader("Violin Plot: Quantity Distribution by Shipping Method")
@@ -160,38 +177,67 @@ sns.violinplot(x='Shipping_Method', y='Quantity', data=cat_data, ax=ax)
 plt.xticks(rotation=90)
 st.pyplot(fig)
 
-# 18. Donut Charts (Placeholder)
+# 18. Donut Charts
 st.subheader("Donut Chart: Import/Export Distribution")
-# Add your implementation here for Donut Chart
+donut_data = cat_data['Import_Export'].value_counts()
+fig, ax = plt.subplots()
+ax.pie(donut_data, labels=donut_data.index, autopct='%1.1f%%', startangle=90)
+centre_circle = plt.Circle((0, 0), 0.70, fc='white')
+fig = plt.gcf()
+fig.gca().add_artist(centre_circle)
+ax.axis('equal')
+st.pyplot(fig)
 
-# 19. Stacked Bar/Column Charts (Placeholder)
+# 19. Stacked Bar/Column Charts
 st.subheader("Stacked Bar Chart: Quantity by Shipping Method and Date")
-# Add your implementation here for Stacked Bar Chart
+stacked_data = country_data.groupby(['Shipping_Method', country_data['Date'].dt.date])['Quantity'].sum().unstack()
+stacked_data.plot(kind='bar', stacked=True)
+st.pyplot()
 
-# 20. Radial Charts (Placeholder)
+# 20. Radial Charts
 st.subheader("Radial Chart: Quantity Distribution")
-# Add your implementation here for Radial Chart
+# Placeholder Radial Chart
+# Not Implemented
 
-# 21. Timeline Visualizations (Placeholder)
+# 21. Timeline Visualizations
 st.subheader("Timeline Visualization: Events Over Time")
-# Add your implementation here for Timeline Visualization
+# Placeholder Timeline Visualization
+# Not Implemented
 
-# 22. Matrix Charts (Placeholder)
+# 22. Matrix Charts
 st.subheader("Matrix Chart: Shipping Method vs. Import/Export")
-# Add your implementation here for Matrix Chart
+matrix_data = country_data.pivot_table(values='Quantity', index='Shipping_Method', columns='Import_Export', aggfunc='sum')
+sns.heatmap(matrix_data, annot=True, fmt='g', cmap='Blues')
+st.pyplot()
 
-# 23. Multi-Series Charts (Placeholder)
+# 23. Multi-Series Charts
 st.subheader("Multi-Series Chart: Value and Quantity Over Time")
-# Add your implementation here for Multi-Series Chart
+multi_series_data = daily_value.set_index('Date').join(daily_quantity.set_index('Date'), lsuffix='_Value', rsuffix='_Quantity')
+multi_series_data.plot()
+st.pyplot()
 
-# 24. Comparison Charts (Placeholder)
+# 24. Comparison Charts
 st.subheader("Comparison Chart: Quantity vs. Value")
-# Add your implementation here for Comparison Chart
+fig, ax = plt.subplots()
+ax.plot(country_data['Date'], country_data['Quantity'], label='Quantity', color='blue')
+ax.plot(country_data['Date'], country_data['Value'], label='Value', color='orange')
+ax.set_title('Comparison of Quantity and Value Over Time')
+ax.set_xlabel('Date')
+ax.set_ylabel('Quantity / Value')
+ax.legend()
+st.pyplot(fig)
 
-# 25. Dendrograms (Placeholder)
-st.subheader("Dendrogram: Hierarchical Clustering")
-# Add your implementation here for Dendrogram
+# 25. Dendrograms
+st.subheader("Dendrogram: Clustering of Shipping Methods")
+linked = linkage(cat_data['Shipping_Method'].value_counts().values.reshape(-1, 1), 'single')
+plt.figure(figsize=(10, 7))
+dendrogram(linked, orientation='top', labels=cat_data['Shipping_Method'].value_counts().index, distance_sort='descending', show_leaf_counts=True)
+st.pyplot()
+
+# Footer
+st.write("This dashboard provides a comprehensive overview of the import/export data.")
 
 # Run the app
-if __name__ == '__main__':
+if __name__ == "__main__":
     st.run()
+
