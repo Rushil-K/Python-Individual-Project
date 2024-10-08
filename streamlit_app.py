@@ -121,17 +121,6 @@ fig, ax = plt.subplots()
 sns.heatmap(correlation_matrix, annot=True, ax=ax)
 st.pyplot(fig)
 
-# Categorical Analysis
-st.header('Categorical Analysis')
-for var in catd.columns:
-    st.subheader(f'Histogram of {var}')
-    fig, ax = plt.subplots()
-    sns.countplot(x=var, data=catd, ax=ax)
-    ax.set_title(f'Histogram of {var}')
-    ax.set_xlabel(var)
-    ax.set_ylabel('Frequency')
-    ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-    st.pyplot(fig)
 
 # Interactive Plots
 st.header('Interactive Visualizations')
