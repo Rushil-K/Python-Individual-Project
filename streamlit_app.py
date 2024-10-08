@@ -136,7 +136,7 @@ elif visualization_type == 'Waterfall Chart':
 # Funnel Chart
 elif visualization_type == 'Funnel Chart':
     st.subheader("Funnel Chart")
-    fig = px.funnel(filtered_df, x='Payment_Terms', y='Value', color='Product', title="Funnel Chart")
+    fig = px.funnel(filtered_df, x='Payment_Terms', y='Value', color='Category', title="Funnel Chart")
     st.plotly_chart(fig)
 
 # Radar Chart
