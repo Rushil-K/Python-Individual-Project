@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
+import plotly.graph_objects as go
 from wordcloud import WordCloud
 
 # Load dataset
@@ -101,15 +102,6 @@ def main():
     fig_donut = px.pie(donut_data, names=donut_data.index, values=donut_data.values, hole=0.4, title='Payment Terms Distribution')
     st.plotly_chart(fig_donut)
 
-    # 12. Word Cloud
-    st.subheader("Word Cloud")
-    text = " ".join(df['Country'].tolist())
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate(text)
-    plt.figure(figsize=(10, 5))
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')
-    st.pyplot(plt)
-
     # 13. Box Plot
     st.subheader("Box Plot")
     fig_box = px.box(df, x='Country', y='Value', title='Box Plot of Value by Country')
@@ -134,9 +126,24 @@ def main():
     # 17. Waterfall Chart
     st.subheader("Waterfall Chart")
     waterfall_data = df.groupby('Date')['Value'].sum().reset_index()
+    
+    # Creating Waterfall Chart
     waterfall_data['Previous Value'] = waterfall_data['Value'].shift(1).fillna(0)
     waterfall_data['Change'] = waterfall_data['Value'] - waterfall_data['Previous Value']
-    fig_waterfall = px.waterfall(waterfall_data, x='Date', y='Change', title='Waterfall Chart of Value')
+    waterfall_data['Total'] = waterfall_data['Change'].cumsum()
+    
+    fig_waterfall = go.Figure()
+    fig_waterfall.add_trace(go.Waterfall(
+        name = "Waterfall",
+        orientation = "v",
+        x = waterfall_data['Date'],
+        y = waterfall_data['Change'],
+        textposition="outside",
+        text = waterfall_data['Change'].apply(lambda x: f"{x:,.2f}"),
+        connector = {"line": {"color": "gray"}},
+    ))
+
+    fig_waterfall.update_layout(title="Waterfall Chart of Value", xaxis_title="Date", yaxis_title="Change in Value")
     st.plotly_chart(fig_waterfall)
 
     # 18. Violin Plot
@@ -160,4 +167,3 @@ def main():
 # Run the app
 if __name__ == '__main__':
     main()
-
