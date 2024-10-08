@@ -12,6 +12,42 @@ def load_data():
     sample_data = df.sample(n=3001, random_state=55027)
     return sample_data
 
+# Function to create a Radar Chart
+def create_radar_chart(df, categories, title):
+    # Prepare data
+    values = df[categories].mean().values.flatten().tolist()
+    num_vars = len(categories)
+
+    # Compute angle for each axis
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+
+    # The plot is a circle, so we need to "complete the loop" and append the start to the end.
+    values += values[:1]
+    angles += angles[:1]
+
+    # Draw the radar chart
+    fig = go.Figure()
+
+    fig.add_trace(go.Scatterpolar(
+        r=values,
+        theta=angles,
+        fill='toself',
+        name='Average Values',
+        marker=dict(color='blue')
+    ))
+
+    fig.update_layout(
+        title=title,
+        polar=dict(
+            radialaxis=dict(
+                visible=True,
+                range=[0, max(values) * 1.1]
+            )),
+        showlegend=True
+    )
+
+    return fig
+
 # Main function
 def main():
     st.set_page_config(layout="wide")  # Set the layout to wide for better organization
@@ -151,6 +187,13 @@ def main():
             stacked_data = df.groupby(['Country', 'Import_Export']).sum(numeric_only=True).reset_index()
             fig_stacked = px.bar(stacked_data, x='Country', y='Value', color='Import_Export', title='Stacked Bar Chart of Value by Country')
             st.plotly_chart(fig_stacked, key="stacked_bar_chart_1")
+
+         # 16. Radar Chart
+         with col2:
+            st.subheader("Radar Chart of Average Metrics")
+            radar_categories = ['Quantity', 'Value', 'Weight']  # Select your metrics
+            radar_fig = create_radar_chart(df, radar_categories, "Average Metrics by Category")
+            st.plotly_chart(radar_fig, key="radar_chart_1")
 
 # Run the app
 if __name__ == '__main__':
