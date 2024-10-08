@@ -172,4 +172,5 @@ for var in variables:
   # Pie Chart
   pie_fig = go.Figure(data=[go.Pie(labels=value_counts.index, values=value_counts.values, hole=.3)])
   pie_fig.update_layout(title_text=f'Pie Chart of {var}')
-  st.plotly
+  st.plotly(pie_fig)
+  
