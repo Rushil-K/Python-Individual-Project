@@ -12,7 +12,7 @@ df = pd.read_csv("Project Dataset.csv")
 sd = df.sample(n=3001, random_state=55027)
 
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
-cat = sd[['Country', 'Import_Export', 'Payment_Terms']]
+catd = sd[['Country', 'Import_Export', 'Payment_Terms']]
 
 # Check for required columns
 required_columns = ['Quantity', 'Value', 'Date', 'Weight', 'Country', 'Import_Export', 'Payment_Terms']
