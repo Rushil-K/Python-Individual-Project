@@ -8,7 +8,7 @@ from wordcloud import WordCloud
 from scipy.cluster.hierarchy import dendrogram, linkage
 
 # Load Data
-df = pd.read_csv(r"C:\Users\rushi\Desktop\Python_FORE\CSV Files\Project Dataset.csv")
+df = pd.read_csv('Project Dataset.csv')
 sd = df.sample(n=3001, random_state=55027)
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
 cat = sd[['Country', 'Import_Export', 'Payment_Terms']]
