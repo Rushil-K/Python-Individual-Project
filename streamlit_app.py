@@ -8,10 +8,10 @@ from wordcloud import WordCloud
 from scipy.cluster.hierarchy import dendrogram, linkage
 
 # Load Data
-df = pd.read_csv('Project Dataset.csv')
+df = pd.read_csv(r"C:\Users\rushi\Desktop\Python_FORE\CSV Files\Project Dataset.csv")
 sd = df.sample(n=3001, random_state=55027)
 ncd = sd[['Quantity', 'Value', 'Date', 'Weight']]
-cat = sd[['Country', 'Import_Export', 'Shipping_Method', 'Payment_Terms']]
+cat = sd[['Country', 'Import_Export', 'Payment_Terms']]
 
 # Convert 'Date' column to datetime format
 ncd['Date'] = pd.to_datetime(ncd['Date'], format="%d-%m-%Y")
@@ -41,9 +41,9 @@ daily_value = country_data.groupby(country_data['Date'].dt.date)['Value'].sum().
 st.line_chart(daily_value.set_index('Date'))
 
 # Pie Chart
-st.subheader("Pie Chart: Distribution of Shipping Methods")
-shipping_method_distribution = cat_data['Shipping_Method'].value_counts()
-st.plotly_chart(px.pie(values=shipping_method_distribution.values, names=shipping_method_distribution.index, title='Shipping Method Distribution'))
+st.subheader("Pie Chart: Distribution of Import/Export")
+import_export_distribution = cat_data['Import_Export'].value_counts()
+st.plotly_chart(px.pie(values=import_export_distribution.values, names=import_export_distribution.index, title='Import/Export Distribution'))
 
 # Area Chart
 st.subheader("Area Chart: Quantity Over Time")
@@ -76,8 +76,8 @@ total_quantity = country_data['Quantity'].sum()
 st.write(f"Total Quantity: {total_quantity:,.0f}")
 
 # 4. Heat Maps
-st.subheader("Heat Map: Quantity by Shipping Method")
-heat_data = country_data.groupby(['Shipping_Method', country_data['Date'].dt.date])['Quantity'].sum().unstack()
+st.subheader("Heat Map: Quantity by Import/Export")
+heat_data = country_data.groupby(['Import_Export', country_data['Date'].dt.date])['Quantity'].sum().unstack()
 sns.heatmap(heat_data, annot=True, fmt='g', cmap='Blues')
 st.pyplot()
 
@@ -89,9 +89,9 @@ choropleth = px.choropleth(cat_data, locations='Country', locationmode='country 
 st.plotly_chart(choropleth)
 
 # Bubble Map
-st.subheader("Bubble Map: Quantity by Shipping Method")
-bubble_map = px.scatter_geo(cat_data, locations="Country", size="Quantity", hover_name="Shipping_Method",
-                             title="Bubble Map: Quantity by Shipping Method")
+st.subheader("Bubble Map: Quantity by Import/Export")
+bubble_map = px.scatter_geo(cat_data, locations="Country", size="Quantity", hover_name="Import_Export",
+                             title="Bubble Map: Quantity by Import/Export")
 st.plotly_chart(bubble_map)
 
 # 6. Histogram
@@ -120,8 +120,8 @@ funnel_df = pd.DataFrame(funnel_data)
 st.bar_chart(funnel_df.set_index('Stage'))
 
 # 9. Treemaps
-st.subheader("Treemap: Shipping Method Distribution")
-treemap = px.treemap(cat_data, path=['Shipping_Method'], values='Quantity', title="Treemap of Shipping Methods")
+st.subheader("Treemap: Import/Export Distribution")
+treemap = px.treemap(cat_data, path=['Import_Export'], values='Quantity', title="Treemap of Import/Export Types")
 st.plotly_chart(treemap)
 
 # 10. Sparklines
@@ -137,12 +137,12 @@ plt.axis('off')
 st.pyplot()
 
 # 12. Network Graphs
-st.subheader("Network Graph: Shipping Method Relationships")
+st.subheader("Network Graph: Import/Export Relationships")
 # Simple Network Graph
 sns.set(style="whitegrid")
 fig, ax = plt.subplots()
-sns.countplot(x='Shipping_Method', data=cat_data, ax=ax)
-ax.set_title('Network of Shipping Methods')
+sns.countplot(x='Import_Export', data=cat_data, ax=ax)
+ax.set_title('Network of Import/Export')
 plt.xticks(rotation=90)
 st.pyplot(fig)
 
@@ -171,9 +171,9 @@ waterfall_df = pd.DataFrame(waterfall_data)
 st.bar_chart(waterfall_df.set_index('Stage'))
 
 # 17. Violin Plots
-st.subheader("Violin Plot: Quantity Distribution by Shipping Method")
+st.subheader("Violin Plot: Quantity Distribution by Import/Export")
 fig, ax = plt.subplots()
-sns.violinplot(x='Shipping_Method', y='Quantity', data=cat_data, ax=ax)
+sns.violinplot(x='Import_Export', y='Quantity', data=cat_data, ax=ax)
 plt.xticks(rotation=90)
 st.pyplot(fig)
 
@@ -189,8 +189,8 @@ ax.axis('equal')
 st.pyplot(fig)
 
 # 19. Stacked Bar/Column Charts
-st.subheader("Stacked Bar Chart: Quantity by Shipping Method and Date")
-stacked_data = country_data.groupby(['Shipping_Method', country_data['Date'].dt.date])['Quantity'].sum().unstack()
+st.subheader("Stacked Bar Chart: Quantity by Import/Export and Date")
+stacked_data = country_data.groupby(['Import_Export', country_data['Date'].dt.date])['Quantity'].sum().unstack()
 stacked_data.plot(kind='bar', stacked=True)
 st.pyplot()
 
@@ -205,8 +205,8 @@ st.subheader("Timeline Visualization: Events Over Time")
 # Not Implemented
 
 # 22. Matrix Charts
-st.subheader("Matrix Chart: Shipping Method vs. Import/Export")
-matrix_data = country_data.pivot_table(values='Quantity', index='Shipping_Method', columns='Import_Export', aggfunc='sum')
+st.subheader("Matrix Chart: Import/Export vs. Country")
+matrix_data = country_data.pivot_table(values='Quantity', index='Import_Export', columns='Country', aggfunc='sum')
 sns.heatmap(matrix_data, annot=True, fmt='g', cmap='Blues')
 st.pyplot()
 
@@ -219,7 +219,7 @@ st.pyplot()
 # 24. Comparison Charts
 st.subheader("Comparison Chart: Quantity vs. Value")
 fig, ax = plt.subplots()
-ax.plot(country_data['Date'], country_data['Quantity'], label='Quantity', color='blue')
+ax.plot(country_data['Date'],country_data['Quantity'], label='Quantity', color='blue')
 ax.plot(country_data['Date'], country_data['Value'], label='Value', color='orange')
 ax.set_title('Comparison of Quantity and Value Over Time')
 ax.set_xlabel('Date')
@@ -228,10 +228,10 @@ ax.legend()
 st.pyplot(fig)
 
 # 25. Dendrograms
-st.subheader("Dendrogram: Clustering of Shipping Methods")
-linked = linkage(cat_data['Shipping_Method'].value_counts().values.reshape(-1, 1), 'single')
+st.subheader("Dendrogram: Clustering of Import/Export")
+linked = linkage(cat_data['Import_Export'].value_counts().values.reshape(-1, 1), 'single')
 plt.figure(figsize=(10, 7))
-dendrogram(linked, orientation='top', labels=cat_data['Shipping_Method'].value_counts().index, distance_sort='descending', show_leaf_counts=True)
+dendrogram(linked, orientation='top', labels=cat_data['Import_Export'].value_counts().index, distance_sort='descending', show_leaf_counts=True)
 st.pyplot()
 
 # Footer
