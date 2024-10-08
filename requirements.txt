@@ -10,4 +10,4 @@ scikit-learn
 pillow
 altair
 pydeck
-stats models
+statsmodels
