@@ -36,10 +36,37 @@ def main():
     categorical_data = df[['Country', 'Import_Export', 'Shipping_Method', 'Payment_Terms']]
 
     # Use tabs for better organization
-    tab1, tab2, tab3, tab4 = st.tabs(["Charts", "Statistics", "Advanced Visualizations", "Managerial Insights"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["World Map", "Charts", "Statistics", "Advanced Visualizations", "Managerial Insights"])
 
-    # Tab 1: Basic Charts
+    # Tab 1: World Map Visualization
     with tab1:
+        st.subheader("World Map: Trade Value by Country")
+        world_map_data = df.groupby('Country').sum(numeric_only=True).reset_index()
+
+        # Create the map
+        fig_map = px.choropleth(world_map_data,
+                                 locations='Country',
+                                 locationmode='country names',
+                                 color='Value',
+                                 hover_name='Country',
+                                 color_continuous_scale=px.colors.sequential.Plasma,
+                                 title="Trade Value by Country")
+
+        # Highlight selected countries
+        if selected_country:
+            fig_map.for_each_trace(lambda t: t.update(marker=dict(line=dict(width=0.5, color='Black'))))
+            for country in selected_country:
+                fig_map.add_trace(go.Scattergeo(
+                    locations=[country],
+                    mode='markers',
+                    marker=dict(size=10, color='red'),
+                    name=country
+                ))
+
+        st.plotly_chart(fig_map)
+
+    # Tab 2: Basic Charts
+    with tab2:
         col1, col2 = st.columns(2)
 
         with col1:
@@ -89,8 +116,8 @@ def main():
             fig_donut_ie.update_layout(margin=dict(t=50, b=50, l=50, r=50), title_x=0.5)
             st.plotly_chart(fig_donut_ie)
 
-    # Tab 2: Summary Statistics
-    with tab2:
+    # Tab 3: Summary Statistics
+    with tab3:
         col1, col2 = st.columns(2)
         
         with col1:
@@ -115,8 +142,8 @@ def main():
             avg_value = df['Value'].mean()
             st.metric("Average Value", f"${avg_value:,.2f}")
 
-    # Tab 3: Advanced Visualizations
-    with tab3:
+    # Tab 4: Advanced Visualizations
+    with tab4:
         col1, col2 = st.columns(2)
 
         with col1:
@@ -155,10 +182,9 @@ def main():
             fig_stacked = px.bar(stacked_data, x='Country', y='Value', color='Import_Export')
             st.plotly_chart(fig_stacked)
 
- # Tab 4: Managerial Insights
-    with tab4:
+    # Tab 5: Managerial Insights
+    with tab5:
         st.header("Managerial Insights")
-
         st.markdown("""
         **The Dashboard can be extensively used to compare the trade volumes of Import / Export between 2 or more countries by using the filters given.**
     
