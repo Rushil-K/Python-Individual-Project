@@ -36,7 +36,7 @@ def main():
     categorical_data = df[['Country', 'Import_Export', 'Shipping_Method', 'Payment_Terms']]
 
     # Use tabs for better organization
-    tab1, tab2, tab3 = st.tabs(["Charts", "Statistics", "Advanced Visualizations"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Charts", "Statistics", "Advanced Visualizations", "Managerial Insights"])
 
     # Tab 1: Basic Charts
     with tab1:
