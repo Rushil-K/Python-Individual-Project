@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from wordcloud import WordCloud
 
 # Load dataset
-@st.cache
+@st.cache_data
 def load_data():
     df = pd.read_csv("Project Dataset.csv")
     sample_data = df.sample(n=3001, random_state=55027)
