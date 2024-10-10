@@ -14,7 +14,7 @@ def load_data():
 
 # Main function
 def main():
-    st.title("Comprehensive Dashboard")
+    st.title("Comprehensive Dashboard: Import/Export Analysis of various Countries")
 
     # Load data
     df = load_data()
