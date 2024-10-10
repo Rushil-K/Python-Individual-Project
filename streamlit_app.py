@@ -155,6 +155,30 @@ def main():
             fig_stacked = px.bar(stacked_data, x='Country', y='Value', color='Import_Export')
             st.plotly_chart(fig_stacked)
 
+ # Tab 4: Managerial Insights
+    with tab4:
+        st.header("Managerial Insights")
+
+        st.markdown("""
+        **The Dashboard can be extensively used to compare the trade volumes of Import / Export between 2 or more countries by using the filters given.**
+    
+        **1. Donut Chart: Shipping Method Distribution**: Analyze the preferred shipping methods to optimize logistics and potentially reduce costs. 
+
+        **2. Donut Chart: Import/Export Distribution**: Evaluate the balance of imports and exports to understand international trade dynamics. 
+
+        **3. Bar Chart: Country-wise Distribution**: Focus on high-performing countries for targeted growth or market expansion.
+
+        **4. Line Chart: Total Value Over Time**: Track seasonal trends in value to forecast future demand and adjust resource allocation accordingly.
+
+        **5. Treemap: Value by Country and Import/Export**: Identify high-value partners and make decisions on strengthening relationships or diversifying trade channels.
+
+        **6. Violin Plot: Value Distribution**: Assess the variability in trade values, which can inform pricing and negotiation strategies.
+
+        **7. Total Value Gauge**: The overall business health metric that helps managers assess performance at a glance.
+
+        **8. Box Plot: Value by Country**: Identify outliers in country-based trade value for risk management or opportunity identification.
+        """)
+
 # Run the app
 if __name__ == '__main__':
     main()
