@@ -67,6 +67,28 @@ def main():
             fig_scatter = px.scatter(df, x='Quantity', y='Value', color='Country')
             st.plotly_chart(fig_scatter)
 
+        col5, col6 = st.columns(2)
+
+        with col5:
+        st.subheader("Donut Chart: Shipping Method Distribution")
+        pie_data = df['Shipping_Method'].value_counts()
+        fig_donut = px.pie(pie_data, names=pie_data.index, values=pie_data.values,
+                           hole=0.4,  # This creates the donut hole
+                           color_discrete_sequence=px.colors.qualitative.Set3,
+                           title="Shipping Method Distribution (Donut Chart)")
+        fig_donut.update_layout(margin=dict(t=50, b=50, l=50, r=50), title_x=0.5)
+        st.plotly_chart(fig_donut)
+
+        with col6:
+        st.subheader("Donut Chart: Import/Export Distribution")
+        import_export_data = df['Import_Export'].value_counts()
+        fig_donut_ie = px.pie(import_export_data, names=import_export_data.index, values=import_export_data.values,
+                              hole=0.4,  # Donut hole
+                              color_discrete_sequence=px.colors.qualitative.Pastel,
+                              title="Import/Export Distribution (Donut Chart)")
+        fig_donut_ie.update_layout(margin=dict(t=50, b=50, l=50, r=50), title_x=0.5)
+        st.plotly_chart(fig_donut_ie)
+
     # Tab 2: Summary Statistics
     with tab2:
         col1, col2 = st.columns(2)
