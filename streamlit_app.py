@@ -50,7 +50,7 @@ def main():
 
     # Use tabs for better organization
     tab1, tab2, tab3, tab4, tab5 = st.tabs(
-        ["World Map", "Charts", "Metrics + Histogram", "Advanced Visualizations", "Managerial Insights"]
+        ["World Map", "Charts", "Key Metrics", "Advanced Visualizations", "Managerial Insights"]
     )
 
     # Tab 1: World Map Visualization
